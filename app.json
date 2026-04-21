@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Habit Builder",
+    "slug": "habit-builder",
+    "version": "1.0.0",
+    "scheme": "habits",
+    "orientation": "portrait",
+    "icon": "./assets/icons/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "splash": {
+      "image": "./assets/icons/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f8f4ec"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.habits.app"
+    },
+    "android": {
+      "package": "com.habits.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icons/adaptive-icon.png",
+        "backgroundColor": "#f8f4ec"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/icons/favicon.png",
+      "bundler": "metro"
+    }
+  }
+}
