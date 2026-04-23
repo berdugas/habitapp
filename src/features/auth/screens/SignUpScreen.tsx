@@ -14,14 +14,12 @@ import { spacing } from "@/theme/spacing";
 export default function SignUpScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit() {
     setIsSubmitting(true);
     setError(null);
-    setFeedback(null);
 
     const { data, error: authError } = await signUpWithPassword(
       email.trim(),
@@ -40,7 +38,9 @@ export default function SignUpScreen() {
       return;
     }
 
-    setFeedback("Account created. If email confirmation is enabled, check your inbox before signing in.");
+    setError(
+      "Sign-up did not return a session. For MVP testing, Supabase email confirmation must be OFF. Verify the hosted Supabase auth setting and try again.",
+    );
   }
 
   return (
@@ -61,13 +61,6 @@ export default function SignUpScreen() {
 
       <View style={styles.formCard}>
         {error ? <ErrorState message={error} /> : null}
-        {feedback ? (
-          <View style={styles.feedbackCard}>
-            <Text selectable style={styles.feedbackText}>
-              {feedback}
-            </Text>
-          </View>
-        ) : null}
         <TextField
           autoCapitalize="none"
           label="Email"
@@ -109,16 +102,6 @@ const styles = StyleSheet.create({
   },
   copy: {
     gap: spacing.sm,
-  },
-  feedbackCard: {
-    backgroundColor: colors.accentSoft,
-    borderRadius: radius.md,
-    padding: spacing.lg,
-  },
-  feedbackText: {
-    color: colors.text,
-    fontSize: 14,
-    lineHeight: 20,
   },
   formCard: {
     backgroundColor: colors.surface,
