@@ -14,12 +14,11 @@ export const PHASE_2A_HABIT_IMPLEMENTED_FIELDS: ReadonlyArray<keyof HabitRecord>
   "preferred_time_window",
   "reminder_enabled",
   "reminder_time",
+  "start_date",
   "is_active",
   "created_at",
   "updated_at",
 ];
-
-export const PHASE_2A_HABIT_PENDING_FIELDS = ["start_date"] as const;
 
 export const PHASE_2A_HABIT_LOG_FIELDS: ReadonlyArray<keyof HabitLogRecord> = [
   "id",
@@ -69,5 +68,4 @@ export const PHASE_2A_PROGRESS_RULES = {
 
 export const PHASE_2A_LOGICAL_DAY_FORMAT = "YYYY-MM-DD";
 export const PHASE_2A_LOGICAL_DAY_SOURCE = "device_local_day" as const;
-export const PHASE_2A_START_DATE_ALIGNMENT_STATUS =
-  "pending_implementation_alignment" as const;
+export const PHASE_2A_START_DATE_ALIGNMENT_STATUS = "implemented" as const;

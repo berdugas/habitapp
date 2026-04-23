@@ -4,7 +4,6 @@ import {
   PHASE_2A_HABIT_LOG_ON_CONFLICT,
   PHASE_2A_HABIT_LOG_STATUS_MEANINGS,
   PHASE_2A_HABIT_LOG_STATUS_VALUES,
-  PHASE_2A_HABIT_PENDING_FIELDS,
   PHASE_2A_LOGICAL_DAY_FORMAT,
   PHASE_2A_LOGICAL_DAY_SOURCE,
   PHASE_2A_PROGRESS_RULES,
@@ -12,7 +11,7 @@ import {
 } from "@/features/habits/contract";
 
 describe("Phase 2A habit contract", () => {
-  it("locks the implemented habit fields and flags start_date as pending alignment", () => {
+  it("locks the implemented habit fields and marks start_date as implemented", () => {
     expect(PHASE_2A_HABIT_IMPLEMENTED_FIELDS).toEqual([
       "id",
       "user_id",
@@ -23,14 +22,12 @@ describe("Phase 2A habit contract", () => {
       "preferred_time_window",
       "reminder_enabled",
       "reminder_time",
+      "start_date",
       "is_active",
       "created_at",
       "updated_at",
     ]);
-    expect(PHASE_2A_HABIT_PENDING_FIELDS).toEqual(["start_date"]);
-    expect(PHASE_2A_START_DATE_ALIGNMENT_STATUS).toBe(
-      "pending_implementation_alignment",
-    );
+    expect(PHASE_2A_START_DATE_ALIGNMENT_STATUS).toBe("implemented");
   });
 
   it("locks the habit log field set, statuses, and owned-day uniqueness key", () => {

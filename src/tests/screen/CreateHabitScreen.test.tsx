@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react-native";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 
 import CreateHabitScreen from "@/features/habits/screens/CreateHabitScreen";
 
@@ -26,22 +26,29 @@ jest.mock("@/features/auth/hooks", () => ({
 }));
 
 jest.mock("@/features/habits/api", () => ({
-  getActiveHabits: jest.fn(),
+  getEligibleHabits: jest.fn(),
 }));
 
 jest.mock("@/features/habits/hooks", () => ({
   useCreateHabitMutation: jest.fn(),
-  getActiveHabitsQueryKey: jest.fn((userId: string | undefined) => [
-    "habits",
-    "active",
-    userId ?? "guest",
-  ]),
+  getEligibleHabitsQueryKey: jest.fn(
+    (userId: string | undefined, todayDate: string) => [
+      "habits",
+      "eligible",
+      userId ?? "guest",
+      todayDate,
+    ],
+  ),
 }));
 
-const { getActiveHabitsQueryKey, useCreateHabitMutation } = jest.requireMock(
+jest.mock("@/utils/dates", () => ({
+  toDeviceDateString: jest.fn(() => "2026-04-23"),
+}));
+
+const { getEligibleHabitsQueryKey, useCreateHabitMutation } = jest.requireMock(
   "@/features/habits/hooks",
 ) as {
-  getActiveHabitsQueryKey: jest.Mock;
+  getEligibleHabitsQueryKey: jest.Mock;
   useCreateHabitMutation: jest.Mock;
 };
 
@@ -75,7 +82,7 @@ describe("CreateHabitScreen", () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it("submits the first habit, refetches active habits, and then routes to today", async () => {
+  it("submits the first habit, refetches eligible habits, and then routes to today", async () => {
     render(<CreateHabitScreen />);
 
     fireEvent.changeText(screen.getByPlaceholderText("Reading"), "Reading");
@@ -104,16 +111,19 @@ describe("CreateHabitScreen", () => {
 
     await waitFor(() => {
       expect(mockInvalidateQueries).toHaveBeenCalledWith({
-        queryKey: ["habits", "active", "user-1"],
+        queryKey: ["habits", "eligible", "user-1", "2026-04-23"],
       });
       expect(mockFetchQuery).toHaveBeenCalledWith({
         queryFn: expect.any(Function),
-        queryKey: ["habits", "active", "user-1"],
+        queryKey: ["habits", "eligible", "user-1", "2026-04-23"],
       });
       expect(mockReplace).toHaveBeenCalledWith("/(app)/(tabs)/today");
     });
 
-    expect(getActiveHabitsQueryKey).toHaveBeenCalledWith("user-1");
+    expect(getEligibleHabitsQueryKey).toHaveBeenCalledWith(
+      "user-1",
+      "2026-04-23",
+    );
     expect(mockInvalidateQueries.mock.invocationCallOrder[0]).toBeLessThan(
       mockFetchQuery.mock.invocationCallOrder[0],
     );
@@ -122,7 +132,7 @@ describe("CreateHabitScreen", () => {
     );
   });
 
-  it("stays on the create screen when the active habits refetch fails", async () => {
+  it("stays on the create screen when the eligible habits refetch fails", async () => {
     mockFetchQuery.mockRejectedValueOnce(new Error("Could not refresh habits."));
 
     render(<CreateHabitScreen />);

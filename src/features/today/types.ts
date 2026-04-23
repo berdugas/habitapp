@@ -9,3 +9,10 @@ export type TodayHabitCardData = {
   streak: number;
   todayStatus: HabitLogStatus | null;
 };
+
+export type UpcomingHabitCardData = {
+  formula: string;
+  id: string;
+  name: string;
+  startDate: string;
+};

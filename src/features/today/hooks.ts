@@ -5,7 +5,10 @@ import {
   getHabitLogsInRange,
   upsertHabitLog,
 } from "@/features/habits/api";
-import { useActiveHabitsQuery } from "@/features/habits/hooks";
+import {
+  useEligibleHabitsQuery,
+  useUpcomingActiveHabitsQuery,
+} from "@/features/habits/hooks";
 import { summarizeHabitProgress } from "@/features/today/progress";
 import { logger } from "@/services/logger";
 import {
@@ -14,7 +17,10 @@ import {
 } from "@/utils/dates";
 
 import type { HabitLogRecord, HabitLogStatus } from "@/features/habits/types";
-import type { TodayHabitCardData } from "@/features/today/types";
+import type {
+  TodayHabitCardData,
+  UpcomingHabitCardData,
+} from "@/features/today/types";
 
 export const TODAY_PROGRESS_WINDOW_DAYS = 30;
 
@@ -28,7 +34,8 @@ export function getHabitLogsRangeQueryKey(
 
 export function useTodayHabits() {
   const { user } = useAuthSession();
-  const activeHabitsQuery = useActiveHabitsQuery();
+  const eligibleHabitsQuery = useEligibleHabitsQuery();
+  const upcomingHabitsQuery = useUpcomingActiveHabitsQuery();
   const { endDate, startDate } = getTrailingDateRangeStrings(
     TODAY_PROGRESS_WINDOW_DAYS,
   );
@@ -48,8 +55,11 @@ export function useTodayHabits() {
 
   return {
     ...historyLogsQuery,
-    error: activeHabitsQuery.error ?? historyLogsQuery.error,
-    habits: (activeHabitsQuery.data ?? []).map<TodayHabitCardData>((habit) => ({
+    error:
+      eligibleHabitsQuery.error ??
+      upcomingHabitsQuery.error ??
+      historyLogsQuery.error,
+    habits: (eligibleHabitsQuery.data ?? []).map<TodayHabitCardData>((habit) => ({
       ...summarizeHabitProgress({
         endDate: historyWindowEndDate,
         logs: logsByHabitId.get(habit.id) ?? [],
@@ -59,7 +69,18 @@ export function useTodayHabits() {
       id: habit.id,
       name: habit.name,
     })),
-    isLoading: activeHabitsQuery.isLoading || historyLogsQuery.isLoading,
+    isLoading:
+      eligibleHabitsQuery.isLoading ||
+      upcomingHabitsQuery.isLoading ||
+      historyLogsQuery.isLoading,
+    upcomingHabits: (upcomingHabitsQuery.data ?? []).map<UpcomingHabitCardData>(
+      (habit) => ({
+        formula: `After ${habit.stack_trigger}, I will ${habit.tiny_action}.`,
+        id: habit.id,
+        name: habit.name,
+        startDate: habit.start_date,
+      }),
+    ),
   };
 }
 

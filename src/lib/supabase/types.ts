@@ -167,6 +167,7 @@ export type Database = {
           preferred_time_window: string | null;
           reminder_enabled: boolean;
           reminder_time: string | null;
+          start_date: string;
           stack_trigger: string;
           tiny_action: string;
           updated_at: string;
@@ -181,6 +182,7 @@ export type Database = {
           preferred_time_window?: string | null;
           reminder_enabled?: boolean;
           reminder_time?: string | null;
+          start_date: string;
           stack_trigger: string;
           tiny_action: string;
           updated_at?: string;

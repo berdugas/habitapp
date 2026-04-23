@@ -10,7 +10,7 @@ If earlier docs describe a simpler or conflicting model, this document wins.
 - Phase 2A keeps `done`, `skipped`, and `missed` as the official daily log statuses.
 - Same-day writes are upserts that overwrite the current day row.
 - `is_active` remains the official active-loop eligibility flag.
-- `start_date` is approved in the contract now, but still pending implementation alignment.
+- `start_date` is implemented as part of the Phase 2A habit contract.
 
 ## Habit
 
@@ -25,7 +25,7 @@ If earlier docs describe a simpler or conflicting model, this document wins.
 | `preferred_time_window` | `string \| null` | no | `null` | yes | no | yes | Stored preference only in Phase 2A |
 | `reminder_enabled` | `boolean` | yes | `false` | yes | no | yes | Stored preference only in Phase 2A |
 | `reminder_time` | `string \| null` | conditional | `null` | yes | no | yes | Required when reminders are enabled |
-| `start_date` | `string` (`YYYY-MM-DD`) | yes | current logical user day | not yet wired | not yet wired | not yet wired | Approved contract field, pending implementation alignment |
+| `start_date` | `string` (`YYYY-MM-DD`) | yes | current logical user day | system-defaulted | eligibility only | yes | Earliest logical day the habit is eligible for logging |
 | `is_active` | `boolean` | yes | `true` | implicit | yes | yes | Active-loop eligibility |
 | `created_at` | ISO timestamp string | yes | system-managed | no | no | no | Audit/debug |
 | `updated_at` | ISO timestamp string | yes | system-managed | no | no | no | Audit/debug |
@@ -49,10 +49,6 @@ If earlier docs describe a simpler or conflicting model, this document wins.
 - `preferred_time_window`
 - `reminder_enabled`
 - `reminder_time`
-
-#### Approved contract field pending alignment
-
-- `start_date`
 
 ## HabitLog
 
@@ -110,9 +106,8 @@ If earlier docs describe a simpler or conflicting model, this document wins.
 - A habit is eligible for logging on or after its `start_date`.
 - In Phase 2A, `start_date` is system-defaulted to the current logical user day.
 - There is no future-start UX in Phase 2A.
-- Contract status: approved.
-- Implementation status: pending.
-- The next schema/alignment task must add `start_date` to the DB schema, Supabase types, create mapping, and eligibility queries before the contract is fully aligned.
+- Contract status: approved and implemented.
+- Database schema, Supabase row types, create mapping, and eligibility queries all use `start_date`.
 
 ### Ownership and access
 
@@ -137,4 +132,4 @@ If earlier docs describe a simpler or conflicting model, this document wins.
 - Keep same-day overwrite/upsert behavior as the source of truth.
 - Keep `is_active` as the official eligibility flag for the active loop.
 - Do not introduce cadence, paused/archived enums, a separate check-in table, or action-history tracking in this step.
-- Approve `start_date` in the contract now, but treat it as pending implementation alignment rather than completed implementation.
+- Keep `start_date` as a required Phase 2A contract field backed by the actual schema and row types.

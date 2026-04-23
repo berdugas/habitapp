@@ -3,7 +3,8 @@ const mockUseMutation = jest.fn();
 const mockInvalidateQueries = jest.fn();
 const mockFetchQuery = jest.fn();
 const mockUseAuthSession = jest.fn();
-const mockUseActiveHabitsQuery = jest.fn();
+const mockUseEligibleHabitsQuery = jest.fn();
+const mockUseUpcomingActiveHabitsQuery = jest.fn();
 const mockGetHabitLogsInRange = jest.fn();
 const mockUpsertHabitLog = jest.fn();
 const mockToDeviceDateString = jest.fn();
@@ -24,7 +25,8 @@ jest.mock("@/features/auth/hooks", () => ({
 }));
 
 jest.mock("@/features/habits/hooks", () => ({
-  useActiveHabitsQuery: () => mockUseActiveHabitsQuery(),
+  useEligibleHabitsQuery: () => mockUseEligibleHabitsQuery(),
+  useUpcomingActiveHabitsQuery: () => mockUseUpcomingActiveHabitsQuery(),
 }));
 
 jest.mock("@/features/habits/api", () => ({
@@ -64,7 +66,12 @@ describe("today hooks", () => {
       error: null,
       isLoading: false,
     });
-    mockUseActiveHabitsQuery.mockReturnValue({
+    mockUseEligibleHabitsQuery.mockReturnValue({
+      data: [],
+      error: null,
+      isLoading: false,
+    });
+    mockUseUpcomingActiveHabitsQuery.mockReturnValue({
       data: [],
       error: null,
       isLoading: false,
@@ -90,11 +97,12 @@ describe("today hooks", () => {
   });
 
   it("builds today habit summaries from the persisted 30-day history window", () => {
-    mockUseActiveHabitsQuery.mockReturnValue({
+    mockUseEligibleHabitsQuery.mockReturnValue({
       data: [
         {
           id: "habit-1",
           name: "Reading",
+          start_date: "2026-04-23",
           stack_trigger: "I brush my teeth",
           tiny_action: "Read 1 page",
         },
@@ -162,6 +170,7 @@ describe("today hooks", () => {
         todayStatus: "done",
       },
     ]);
+    expect(result.upcomingHabits).toEqual([]);
     expect(mockUseQuery).toHaveBeenCalledWith({
       enabled: true,
       queryFn: expect.any(Function),
@@ -171,6 +180,39 @@ describe("today hooks", () => {
         "2026-04-23",
       ),
     });
+  });
+
+  it("returns upcoming habits separately when nothing is eligible yet", () => {
+    mockUseEligibleHabitsQuery.mockReturnValue({
+      data: [],
+      error: null,
+      isLoading: false,
+    });
+    mockUseUpcomingActiveHabitsQuery.mockReturnValue({
+      data: [
+        {
+          id: "habit-2",
+          name: "Meditation",
+          start_date: "2026-04-25",
+          stack_trigger: "I wake up",
+          tiny_action: "Meditate for 1 minute",
+        },
+      ],
+      error: null,
+      isLoading: false,
+    });
+
+    const result = useTodayHabits();
+
+    expect(result.habits).toEqual([]);
+    expect(result.upcomingHabits).toEqual([
+      {
+        formula: "After I wake up, I will Meditate for 1 minute.",
+        id: "habit-2",
+        name: "Meditation",
+        startDate: "2026-04-25",
+      },
+    ]);
   });
 
   it("invalidates and explicitly refetches today's log query after a successful mutation", async () => {

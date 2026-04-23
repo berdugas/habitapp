@@ -80,6 +80,7 @@ create table if not exists public.habits (
   reminder_enabled boolean not null default false,
   reminder_time time,
   is_active boolean not null default true,
+  start_date date not null,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
   constraint habits_reminder_time_check

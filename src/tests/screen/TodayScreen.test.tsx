@@ -2,6 +2,12 @@ import { fireEvent, render, screen } from "@testing-library/react-native";
 
 import TodayScreen from "@/features/today/screens/TodayScreen";
 
+jest.mock("expo-router", () => ({
+  router: {
+    push: jest.fn(),
+  },
+}));
+
 jest.mock("@/features/today/hooks", () => ({
   useTodayHabits: jest.fn(),
   useUpsertTodayHabitStatusMutation: jest.fn(),
@@ -45,6 +51,7 @@ describe("TodayScreen", () => {
         },
       ],
       isLoading: false,
+      upcomingHabits: [],
     });
 
     render(<TodayScreen />);
@@ -71,6 +78,7 @@ describe("TodayScreen", () => {
         },
       ],
       isLoading: false,
+      upcomingHabits: [],
     });
 
     render(<TodayScreen />);
@@ -104,6 +112,7 @@ describe("TodayScreen", () => {
         },
       ],
       isLoading: false,
+      upcomingHabits: [],
     });
 
     render(<TodayScreen />);
@@ -135,6 +144,7 @@ describe("TodayScreen", () => {
         },
       ],
       isLoading: false,
+      upcomingHabits: [],
     });
 
     render(<TodayScreen />);
@@ -147,5 +157,27 @@ describe("TodayScreen", () => {
     if (resolveMutation) {
       resolveMutation();
     }
+  });
+
+  it("shows the upcoming state when active habits are scheduled for later", () => {
+    useTodayHabits.mockReturnValue({
+      error: null,
+      habits: [],
+      isLoading: false,
+      upcomingHabits: [
+        {
+          formula: "After I wake up, I will Meditate for 1 minute.",
+          id: "habit-2",
+          name: "Meditation",
+          startDate: "2026-05-02",
+        },
+      ],
+    });
+
+    render(<TodayScreen />);
+
+    expect(screen.getByText("Nothing starts today yet")).toBeTruthy();
+    expect(screen.getByText("Meditation")).toBeTruthy();
+    expect(screen.getByText("Create another habit")).toBeTruthy();
   });
 });

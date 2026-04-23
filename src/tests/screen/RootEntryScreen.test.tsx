@@ -14,14 +14,19 @@ jest.mock("@/features/auth/hooks", () => ({
 }));
 
 jest.mock("@/features/habits/hooks", () => ({
-  useActiveHabitsQuery: jest.fn(),
+  useEligibleHabitsQuery: jest.fn(),
+  useUpcomingActiveHabitsQuery: jest.fn(),
 }));
 
 const { useAuthSession } = jest.requireMock("@/features/auth/hooks") as {
   useAuthSession: jest.Mock;
 };
-const { useActiveHabitsQuery } = jest.requireMock("@/features/habits/hooks") as {
-  useActiveHabitsQuery: jest.Mock;
+const {
+  useEligibleHabitsQuery,
+  useUpcomingActiveHabitsQuery,
+} = jest.requireMock("@/features/habits/hooks") as {
+  useEligibleHabitsQuery: jest.Mock;
+  useUpcomingActiveHabitsQuery: jest.Mock;
 };
 
 describe("RootEntryScreen", () => {
@@ -34,7 +39,11 @@ describe("RootEntryScreen", () => {
       isBootstrapping: false,
       session: null,
     });
-    useActiveHabitsQuery.mockReturnValue({
+    useEligibleHabitsQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+    });
+    useUpcomingActiveHabitsQuery.mockReturnValue({
       data: [],
       isLoading: false,
     });
@@ -46,12 +55,16 @@ describe("RootEntryScreen", () => {
     ).toBeTruthy();
   });
 
-  it("redirects authenticated users with no active habits to create", () => {
+  it("redirects authenticated users with no eligible or upcoming habits to create", () => {
     useAuthSession.mockReturnValue({
       isBootstrapping: false,
       session: { user: { id: "user-1" } },
     });
-    useActiveHabitsQuery.mockReturnValue({
+    useEligibleHabitsQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+    });
+    useUpcomingActiveHabitsQuery.mockReturnValue({
       data: [],
       isLoading: false,
     });
@@ -63,13 +76,17 @@ describe("RootEntryScreen", () => {
     ).toBeTruthy();
   });
 
-  it("redirects authenticated users with an active habit to today", () => {
+  it("redirects authenticated users with an eligible habit to today", () => {
     useAuthSession.mockReturnValue({
       isBootstrapping: false,
       session: { user: { id: "user-1" } },
     });
-    useActiveHabitsQuery.mockReturnValue({
+    useEligibleHabitsQuery.mockReturnValue({
       data: [{ id: "habit-1" }],
+      isLoading: false,
+    });
+    useUpcomingActiveHabitsQuery.mockReturnValue({
+      data: [],
       isLoading: false,
     });
 
@@ -80,14 +97,40 @@ describe("RootEntryScreen", () => {
     ).toBeTruthy();
   });
 
-  it("shows an error instead of misrouting when active habits fail to load", () => {
+  it("redirects authenticated users with only upcoming active habits to today", () => {
     useAuthSession.mockReturnValue({
       isBootstrapping: false,
       session: { user: { id: "user-1" } },
     });
-    useActiveHabitsQuery.mockReturnValue({
+    useEligibleHabitsQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+    });
+    useUpcomingActiveHabitsQuery.mockReturnValue({
+      data: [{ id: "habit-2" }],
+      isLoading: false,
+    });
+
+    render(<RootEntryScreen />);
+
+    expect(
+      screen.getByText("redirect:/(app)/(tabs)/today"),
+    ).toBeTruthy();
+  });
+
+  it("shows an error instead of misrouting when habit queries fail", () => {
+    useAuthSession.mockReturnValue({
+      isBootstrapping: false,
+      session: { user: { id: "user-1" } },
+    });
+    useEligibleHabitsQuery.mockReturnValue({
       data: [],
       error: new Error("boom"),
+      isLoading: false,
+    });
+    useUpcomingActiveHabitsQuery.mockReturnValue({
+      data: [],
+      error: null,
       isLoading: false,
     });
 
@@ -103,7 +146,11 @@ describe("RootEntryScreen", () => {
       isBootstrapping: true,
       session: null,
     });
-    useActiveHabitsQuery.mockReturnValue({
+    useEligibleHabitsQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+    });
+    useUpcomingActiveHabitsQuery.mockReturnValue({
       data: [],
       isLoading: false,
     });

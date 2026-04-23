@@ -6,11 +6,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { PrimaryButton } from "@/components/buttons/PrimaryButton";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { useAuthSession } from "@/features/auth/hooks";
-import { getActiveHabits } from "@/features/habits/api";
+import { getEligibleHabits } from "@/features/habits/api";
 import { TextField } from "@/components/forms/TextField";
 import { ToggleRow } from "@/components/forms/ToggleRow";
 import {
-  getActiveHabitsQueryKey,
+  getEligibleHabitsQueryKey,
   useCreateHabitMutation,
 } from "@/features/habits/hooks";
 import { logger } from "@/services/logger";
@@ -18,6 +18,7 @@ import { validateCreateHabitPayload } from "@/features/habits/validators";
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
 import { spacing } from "@/theme/spacing";
+import { toDeviceDateString } from "@/utils/dates";
 import {
   getCreateHabitErrorMessage,
   getRefreshHabitsErrorMessage,
@@ -75,11 +76,12 @@ export default function CreateHabitScreen() {
         throw new Error("We could not refresh your habit list right now.");
       }
 
-      const queryKey = getActiveHabitsQueryKey(user.id);
+      const todayDate = toDeviceDateString();
+      const queryKey = getEligibleHabitsQueryKey(user.id, todayDate);
 
       await queryClient.invalidateQueries({ queryKey });
       await queryClient.fetchQuery({
-        queryFn: () => getActiveHabits(user.id),
+        queryFn: () => getEligibleHabits(user.id, todayDate),
         queryKey,
       });
       router.replace("/(app)/(tabs)/today");

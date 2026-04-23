@@ -1,6 +1,8 @@
 import { useRef } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
 
+import { SecondaryButton } from "@/components/buttons/SecondaryButton";
 import { HabitCard } from "@/components/cards/HabitCard";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { ErrorState } from "@/components/feedback/ErrorState";
@@ -39,8 +41,18 @@ function formatStreak(streak: number) {
   return `${streak} day${streak === 1 ? "" : "s"}`;
 }
 
+function formatStartDateLabel(startDate: string) {
+  return `Starts on ${new Date(`${startDate}T12:00:00`).toLocaleDateString(
+    undefined,
+    {
+      day: "numeric",
+      month: "long",
+    },
+  )}`;
+}
+
 export default function TodayScreen() {
-  const { error, habits, isLoading } = useTodayHabits();
+  const { error, habits, isLoading, upcomingHabits } = useTodayHabits();
   const upsertTodayHabitStatusMutation = useUpsertTodayHabitStatusMutation();
   const statusSubmitLockRef = useRef(false);
 
@@ -92,11 +104,30 @@ export default function TodayScreen() {
         <ErrorState message={getSaveTodayStatusErrorMessage()} />
       ) : null}
 
-      {habits.length === 0 ? (
+      {habits.length === 0 && upcomingHabits.length === 0 ? (
         <EmptyState
           body="Create your first active habit and it will show up here right away."
           title="No active habits yet"
         />
+      ) : habits.length === 0 ? (
+        <View style={styles.upcomingSection}>
+          <EmptyState
+            body="Your active habits are scheduled to begin soon."
+            title="Nothing starts today yet"
+          />
+          {upcomingHabits.map((habit) => (
+            <HabitCard
+              formula={habit.formula}
+              key={habit.id}
+              metaText={formatStartDateLabel(habit.startDate)}
+              name={habit.name}
+            />
+          ))}
+          <SecondaryButton
+            label="Create another habit"
+            onPress={() => router.push("/(app)/habits/create")}
+          />
+        </View>
       ) : (
         habits.map((habit) => (
           <HabitCard
@@ -207,6 +238,9 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 18,
     fontWeight: "700",
+  },
+  upcomingSection: {
+    gap: spacing.lg,
   },
   screen: {
     backgroundColor: colors.background,

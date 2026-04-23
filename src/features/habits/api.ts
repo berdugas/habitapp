@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase/client";
 import { logger } from "@/services/logger";
 import { PHASE_2A_HABIT_LOG_ON_CONFLICT } from "@/features/habits/contract";
+import { toDeviceDateString } from "@/utils/dates";
 
 import type {
   CreateHabitPayload,
@@ -18,22 +19,46 @@ function mapCreateHabitPayload(userId: string, payload: CreateHabitPayload) {
     reminder_time: payload.reminderEnabled
       ? payload.reminderTime.trim() || null
       : null,
+    start_date: toDeviceDateString(),
     stack_trigger: payload.stackTrigger.trim(),
     tiny_action: payload.tinyAction.trim(),
     user_id: userId,
   };
 }
 
-export async function getActiveHabits(userId: string) {
+export async function getEligibleHabits(userId: string, todayDate: string) {
   const { data, error } = await supabase
     .from("habits")
     .select("*")
     .eq("user_id", userId)
     .eq("is_active", true)
+    .lte("start_date", todayDate)
     .order("created_at", { ascending: true });
 
   if (error) {
-    logger.error("Failed to fetch active habits", { error, userId });
+    logger.error("Failed to fetch eligible habits", { error, todayDate, userId });
+    throw error;
+  }
+
+  return (data ?? []) as HabitRecord[];
+}
+
+export async function getUpcomingActiveHabits(userId: string, todayDate: string) {
+  const { data, error } = await supabase
+    .from("habits")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .gt("start_date", todayDate)
+    .order("start_date", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    logger.error("Failed to fetch upcoming active habits", {
+      error,
+      todayDate,
+      userId,
+    });
     throw error;
   }
 
@@ -81,10 +106,40 @@ export async function getHabitLogsInRange(
   return (data ?? []) as HabitLogRecord[];
 }
 
+async function getOwnedHabit(userId: string, habitId: string) {
+  const { data, error } = await supabase
+    .from("habits")
+    .select("*")
+    .eq("id", habitId)
+    .eq("user_id", userId)
+    .single();
+
+  if (error) {
+    logger.error("Failed to load owned habit for logging", {
+      error,
+      habitId,
+      userId,
+    });
+    throw error;
+  }
+
+  return data as HabitRecord;
+}
+
 export async function upsertHabitLog(
   userId: string,
   payload: UpsertHabitLogPayload,
 ) {
+  const habit = await getOwnedHabit(userId, payload.habitId);
+
+  if (!habit.is_active) {
+    throw new Error("Inactive habits cannot receive new logs.");
+  }
+
+  if (payload.logDate < habit.start_date) {
+    throw new Error("Habits cannot be logged before their start date.");
+  }
+
   const { data, error } = await supabase
     .from("habit_logs")
     .upsert(
