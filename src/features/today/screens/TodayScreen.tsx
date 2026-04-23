@@ -31,6 +31,14 @@ function formatTodayStatus(status: HabitLogStatus | null) {
   return `Today: ${status[0].toUpperCase()}${status.slice(1)}`;
 }
 
+function formatConsistency(consistencyRate: number) {
+  return `${Math.round(consistencyRate * 100)}%`;
+}
+
+function formatStreak(streak: number) {
+  return `${streak} day${streak === 1 ? "" : "s"}`;
+}
+
 export default function TodayScreen() {
   const { error, habits, isLoading } = useTodayHabits();
   const upsertTodayHabitStatusMutation = useUpsertTodayHabitStatusMutation();
@@ -76,6 +84,32 @@ export default function TodayScreen() {
             metaText={formatTodayStatus(habit.todayStatus)}
             name={habit.name}
           >
+            <View style={styles.progressGrid}>
+              <View style={styles.progressItem}>
+                <Text selectable style={styles.progressLabel}>
+                  30-day skips
+                </Text>
+                <Text selectable style={styles.progressValue}>
+                  {habit.skipCount}
+                </Text>
+              </View>
+              <View style={styles.progressItem}>
+                <Text selectable style={styles.progressLabel}>
+                  Consistency
+                </Text>
+                <Text selectable style={styles.progressValue}>
+                  {formatConsistency(habit.consistencyRate)}
+                </Text>
+              </View>
+              <View style={styles.progressItem}>
+                <Text selectable style={styles.progressLabel}>
+                  Streak
+                </Text>
+                <Text selectable style={styles.progressValue}>
+                  {formatStreak(habit.streak)}
+                </Text>
+              </View>
+            </View>
             <View style={styles.actionsRow}>
               {STATUS_OPTIONS.map((option) => {
                 const isSelected = habit.todayStatus === option.value;
@@ -133,6 +167,30 @@ const styles = StyleSheet.create({
   },
   header: {
     gap: spacing.sm,
+  },
+  progressGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  progressItem: {
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.md,
+    gap: spacing.xs,
+    minWidth: 96,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  progressLabel: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  progressValue: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "700",
   },
   screen: {
     backgroundColor: colors.background,

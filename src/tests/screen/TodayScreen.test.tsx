@@ -32,9 +32,12 @@ describe("TodayScreen", () => {
       error: null,
       habits: [
         {
+          consistencyRate: 2 / 3,
           formula: "After I brush my teeth, I will Read 1 page.",
           id: "habit-1",
           name: "Reading",
+          skipCount: 1,
+          streak: 2,
           todayStatus: "done",
         },
       ],
@@ -45,6 +48,9 @@ describe("TodayScreen", () => {
 
     expect(screen.getByText("Reading")).toBeTruthy();
     expect(screen.getByText("Today: Done")).toBeTruthy();
+    expect(screen.getByText("1")).toBeTruthy();
+    expect(screen.getByText("67%")).toBeTruthy();
+    expect(screen.getByText("2 days")).toBeTruthy();
   });
 
   it("writes a skipped status for the selected habit", () => {
@@ -52,9 +58,12 @@ describe("TodayScreen", () => {
       error: null,
       habits: [
         {
+          consistencyRate: 0,
           formula: "After I brush my teeth, I will Read 1 page.",
           id: "habit-1",
           name: "Reading",
+          skipCount: 0,
+          streak: 0,
           todayStatus: null,
         },
       ],

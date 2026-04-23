@@ -1,4 +1,8 @@
-import { getWeekStartDateString, toDeviceDateString } from "@/utils/dates";
+import {
+  getTrailingDateRangeStrings,
+  getWeekStartDateString,
+  toDeviceDateString,
+} from "@/utils/dates";
 
 describe("date helpers", () => {
   it("uses device-local date formatting", () => {
@@ -11,5 +15,14 @@ describe("date helpers", () => {
     expect(getWeekStartDateString(new Date("2026-04-22T10:30:00"))).toBe(
       "2026-04-20",
     );
+  });
+
+  it("builds the last 30-day local date window inclusive of today", () => {
+    expect(
+      getTrailingDateRangeStrings(30, new Date("2026-04-23T10:30:00")),
+    ).toEqual({
+      endDate: "2026-04-23",
+      startDate: "2026-03-25",
+    });
   });
 });

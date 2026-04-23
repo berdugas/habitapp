@@ -6,10 +6,16 @@ import {
   upsertHabitLog,
 } from "@/features/habits/api";
 import { useActiveHabitsQuery } from "@/features/habits/hooks";
-import { toDeviceDateString } from "@/utils/dates";
+import { summarizeHabitProgress } from "@/features/today/progress";
+import {
+  getTrailingDateRangeStrings,
+  toDeviceDateString,
+} from "@/utils/dates";
 
-import type { HabitLogStatus } from "@/features/habits/types";
+import type { HabitLogRecord, HabitLogStatus } from "@/features/habits/types";
 import type { TodayHabitCardData } from "@/features/today/types";
+
+export const TODAY_PROGRESS_WINDOW_DAYS = 30;
 
 export function getHabitLogsRangeQueryKey(
   userId: string | undefined,
@@ -22,26 +28,37 @@ export function getHabitLogsRangeQueryKey(
 export function useTodayHabits() {
   const { user } = useAuthSession();
   const activeHabitsQuery = useActiveHabitsQuery();
-  const todayDate = toDeviceDateString();
-  const todayLogsQuery = useQuery({
-    enabled: Boolean(user?.id),
-    queryFn: () => getHabitLogsInRange(user!.id, todayDate, todayDate),
-    queryKey: getHabitLogsRangeQueryKey(user?.id, todayDate, todayDate),
-  });
-  const todayLogsByHabitId = new Map(
-    (todayLogsQuery.data ?? []).map((log) => [log.habit_id, log]),
+  const { endDate, startDate } = getTrailingDateRangeStrings(
+    TODAY_PROGRESS_WINDOW_DAYS,
   );
+  const historyLogsQuery = useQuery({
+    enabled: Boolean(user?.id),
+    queryFn: () => getHabitLogsInRange(user!.id, startDate, endDate),
+    queryKey: getHabitLogsRangeQueryKey(user?.id, startDate, endDate),
+  });
+  const logsByHabitId = new Map<string, HabitLogRecord[]>();
+  const historyWindowEndDate = new Date(`${endDate}T12:00:00`);
+
+  for (const log of historyLogsQuery.data ?? []) {
+    const existingLogs = logsByHabitId.get(log.habit_id) ?? [];
+    existingLogs.push(log);
+    logsByHabitId.set(log.habit_id, existingLogs);
+  }
 
   return {
-    ...todayLogsQuery,
-    error: activeHabitsQuery.error ?? todayLogsQuery.error,
+    ...historyLogsQuery,
+    error: activeHabitsQuery.error ?? historyLogsQuery.error,
     habits: (activeHabitsQuery.data ?? []).map<TodayHabitCardData>((habit) => ({
+      ...summarizeHabitProgress({
+        endDate: historyWindowEndDate,
+        logs: logsByHabitId.get(habit.id) ?? [],
+        windowDays: TODAY_PROGRESS_WINDOW_DAYS,
+      }),
       formula: `After ${habit.stack_trigger}, I will ${habit.tiny_action}.`,
       id: habit.id,
       name: habit.name,
-      todayStatus: todayLogsByHabitId.get(habit.id)?.status ?? null,
     })),
-    isLoading: activeHabitsQuery.isLoading || todayLogsQuery.isLoading,
+    isLoading: activeHabitsQuery.isLoading || historyLogsQuery.isLoading,
   };
 }
 
@@ -76,14 +93,16 @@ export function useUpsertTodayHabitStatusMutation() {
         return;
       }
 
-      const todayDate = toDeviceDateString();
-      const queryKey = getHabitLogsRangeQueryKey(user.id, todayDate, todayDate);
+      const { endDate, startDate } = getTrailingDateRangeStrings(
+        TODAY_PROGRESS_WINDOW_DAYS,
+      );
+      const queryKey = getHabitLogsRangeQueryKey(user.id, startDate, endDate);
 
       await queryClient.invalidateQueries({
         queryKey,
       });
       await queryClient.fetchQuery({
-        queryFn: () => getHabitLogsInRange(user.id, todayDate, todayDate),
+        queryFn: () => getHabitLogsInRange(user.id, startDate, endDate),
         queryKey,
       });
     },
