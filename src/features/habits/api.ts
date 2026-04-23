@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase/client";
 import { logger } from "@/services/logger";
+import { PHASE_2A_HABIT_LOG_ON_CONFLICT } from "@/features/habits/contract";
 
 import type {
   CreateHabitPayload,
@@ -95,7 +96,7 @@ export async function upsertHabitLog(
         user_id: userId,
       },
       {
-        onConflict: "habit_id,log_date",
+        onConflict: PHASE_2A_HABIT_LOG_ON_CONFLICT,
       },
     )
     .select("*")

@@ -6,6 +6,10 @@ import { EmptyState } from "@/components/feedback/EmptyState";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { LoadingState } from "@/components/feedback/LoadingState";
 import {
+  PHASE_2A_HABIT_LOG_STATUS_LABELS,
+  PHASE_2A_HABIT_LOG_STATUS_VALUES,
+} from "@/features/habits/contract";
+import {
   useTodayHabits,
   useUpsertTodayHabitStatusMutation,
 } from "@/features/today/hooks";
@@ -18,15 +22,6 @@ import {
 } from "@/utils/userFacingErrors";
 
 import type { HabitLogStatus } from "@/features/habits/types";
-
-const STATUS_OPTIONS: Array<{
-  label: string;
-  value: HabitLogStatus;
-}> = [
-  { label: "Done", value: "done" },
-  { label: "Skipped", value: "skipped" },
-  { label: "Missed", value: "missed" },
-];
 
 function formatTodayStatus(status: HabitLogStatus | null) {
   if (!status) {
@@ -137,15 +132,15 @@ export default function TodayScreen() {
               </View>
             </View>
             <View style={styles.actionsRow}>
-              {STATUS_OPTIONS.map((option) => {
-                const isSelected = habit.todayStatus === option.value;
+              {PHASE_2A_HABIT_LOG_STATUS_VALUES.map((status) => {
+                const isSelected = habit.todayStatus === status;
 
                 return (
                   <Pressable
                     accessibilityRole="button"
                     disabled={upsertTodayHabitStatusMutation.isPending}
-                    key={option.value}
-                    onPress={() => void handleStatusPress(habit.id, option.value)}
+                    key={status}
+                    onPress={() => void handleStatusPress(habit.id, status)}
                     style={[
                       styles.statusButton,
                       isSelected && styles.statusButtonSelected,
@@ -158,7 +153,7 @@ export default function TodayScreen() {
                         isSelected && styles.statusButtonLabelSelected,
                       ]}
                     >
-                      {option.label}
+                      {PHASE_2A_HABIT_LOG_STATUS_LABELS[status]}
                     </Text>
                   </Pressable>
                 );

@@ -33,7 +33,7 @@ describe("upsertHabitLog", () => {
     });
   });
 
-  it("uses a conflict target on habit_id and log_date so same-day replacements do not create duplicates", async () => {
+  it("uses the owned-day conflict target so same-day replacements do not create duplicates", async () => {
     await upsertHabitLog("user-1", {
       habitId: "habit-1",
       logDate: "2026-04-23",
@@ -57,7 +57,7 @@ describe("upsertHabitLog", () => {
         user_id: "user-1",
       },
       {
-        onConflict: "habit_id,log_date",
+        onConflict: "user_id,habit_id,log_date",
       },
     );
     expect(mockUpsert).toHaveBeenNthCalledWith(
@@ -70,7 +70,7 @@ describe("upsertHabitLog", () => {
         user_id: "user-1",
       },
       {
-        onConflict: "habit_id,log_date",
+        onConflict: "user_id,habit_id,log_date",
       },
     );
   });

@@ -111,7 +111,7 @@ create table if not exists public.habit_logs (
   note text,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
-  constraint habit_logs_one_per_day unique (habit_id, log_date)
+  constraint habit_logs_one_per_owned_day unique (user_id, habit_id, log_date)
 );
 
 create table if not exists public.weekly_reviews (
