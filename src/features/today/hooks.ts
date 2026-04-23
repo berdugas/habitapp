@@ -72,10 +72,19 @@ export function useUpsertTodayHabitStatusMutation() {
       });
     },
     onSuccess: async () => {
+      if (!user?.id) {
+        return;
+      }
+
       const todayDate = toDeviceDateString();
+      const queryKey = getHabitLogsRangeQueryKey(user.id, todayDate, todayDate);
 
       await queryClient.invalidateQueries({
-        queryKey: getHabitLogsRangeQueryKey(user?.id, todayDate, todayDate),
+        queryKey,
+      });
+      await queryClient.fetchQuery({
+        queryFn: () => getHabitLogsInRange(user.id, todayDate, todayDate),
+        queryKey,
       });
     },
   });
