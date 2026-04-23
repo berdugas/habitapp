@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { useAuthSession } from "@/features/auth/hooks";
 import { createHabit, getActiveHabits } from "@/features/habits/api";
@@ -22,7 +22,6 @@ export function useActiveHabitsQuery() {
 
 export function useCreateHabitMutation() {
   const { user } = useAuthSession();
-  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (payload: CreateHabitPayload) => {
@@ -32,11 +31,8 @@ export function useCreateHabitMutation() {
 
       return createHabit(user.id, payload);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       trackEvent("habit_created");
-      await queryClient.invalidateQueries({
-        queryKey: getActiveHabitsQueryKey(user?.id),
-      });
     },
   });
 }

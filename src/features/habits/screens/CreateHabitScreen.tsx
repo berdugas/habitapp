@@ -1,12 +1,18 @@
 import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { PrimaryButton } from "@/components/buttons/PrimaryButton";
 import { ErrorState } from "@/components/feedback/ErrorState";
+import { useAuthSession } from "@/features/auth/hooks";
+import { getActiveHabits } from "@/features/habits/api";
 import { TextField } from "@/components/forms/TextField";
 import { ToggleRow } from "@/components/forms/ToggleRow";
-import { useCreateHabitMutation } from "@/features/habits/hooks";
+import {
+  getActiveHabitsQueryKey,
+  useCreateHabitMutation,
+} from "@/features/habits/hooks";
 import { validateCreateHabitPayload } from "@/features/habits/validators";
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
@@ -22,6 +28,8 @@ export default function CreateHabitScreen() {
   const [reminderTime, setReminderTime] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
+  const { user } = useAuthSession();
+  const queryClient = useQueryClient();
   const createHabitMutation = useCreateHabitMutation();
 
   const payload = {
@@ -49,6 +57,17 @@ export default function CreateHabitScreen() {
 
     try {
       await createHabitMutation.mutateAsync(payload);
+      if (!user?.id) {
+        throw new Error("We could not refresh your habit list right now.");
+      }
+
+      const queryKey = getActiveHabitsQueryKey(user.id);
+
+      await queryClient.invalidateQueries({ queryKey });
+      await queryClient.fetchQuery({
+        queryFn: () => getActiveHabits(user.id),
+        queryKey,
+      });
       router.replace("/(app)/(tabs)/today");
     } catch (error) {
       const message =
