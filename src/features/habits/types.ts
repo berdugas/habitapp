@@ -1,6 +1,8 @@
 import type { Database } from "@/lib/supabase/types";
 
 export type HabitRecord = Database["public"]["Tables"]["habits"]["Row"];
+export type HabitLogRecord = Database["public"]["Tables"]["habit_logs"]["Row"];
+export type HabitLogStatus = Database["public"]["Enums"]["habit_log_status"];
 
 export type CreateHabitPayload = {
   identityStatement: string;
@@ -10,4 +12,11 @@ export type CreateHabitPayload = {
   reminderTime: string;
   stackTrigger: string;
   tinyAction: string;
+};
+
+export type UpsertHabitLogPayload = {
+  habitId: string;
+  logDate: string;
+  note?: string | null;
+  status: HabitLogStatus;
 };

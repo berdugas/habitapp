@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors } from "@/theme/colors";
@@ -6,12 +8,20 @@ import { shadows } from "@/theme/shadows";
 import { spacing } from "@/theme/spacing";
 
 type HabitCardProps = {
+  children?: ReactNode;
   formula: string;
+  metaText?: string;
   name: string;
   onPress?: () => void;
 };
 
-export function HabitCard({ formula, name, onPress }: HabitCardProps) {
+export function HabitCard({
+  children,
+  formula,
+  metaText = "Tracking starts here",
+  name,
+  onPress,
+}: HabitCardProps) {
   return (
     <Pressable disabled={!onPress} onPress={onPress} style={styles.card}>
       <Text selectable style={styles.name}>
@@ -20,9 +30,10 @@ export function HabitCard({ formula, name, onPress }: HabitCardProps) {
       <Text selectable style={styles.formula}>
         {formula}
       </Text>
+      {children}
       <View style={styles.metaRow}>
         <Text selectable style={styles.metaText}>
-          Tracking starts here
+          {metaText}
         </Text>
       </View>
     </Pressable>
