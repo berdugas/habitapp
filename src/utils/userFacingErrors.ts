@@ -15,6 +15,21 @@ function getErrorMessage(error: unknown) {
   return "";
 }
 
+export function isInvalidLoginCredentialsError(error: unknown) {
+  return getErrorMessage(error).toLowerCase().includes("invalid login credentials");
+}
+
+export function isExpectedSignUpAuthError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase();
+
+  return (
+    message.includes("already registered") ||
+    message.includes("invalid email") ||
+    message.includes("email is invalid") ||
+    message.includes("password")
+  );
+}
+
 export function getSignInErrorMessage(error: unknown) {
   const message = getErrorMessage(error).toLowerCase();
 

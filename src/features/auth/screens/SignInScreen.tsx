@@ -15,7 +15,10 @@ import {
   isBlank,
   isLikelyEmail,
 } from "@/utils/validation";
-import { getSignInErrorMessage } from "@/utils/userFacingErrors";
+import {
+  getSignInErrorMessage,
+  isInvalidLoginCredentialsError,
+} from "@/utils/userFacingErrors";
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
@@ -55,7 +58,13 @@ export default function SignInScreen() {
       );
 
       if (authError) {
-        logger.error("Failed to sign in", { authError, email: email.trim() });
+        if (isInvalidLoginCredentialsError(authError)) {
+          logger.warn("Sign-in rejected by Supabase", {
+            reason: "invalid_credentials",
+          });
+        } else {
+          logger.error("Failed to sign in", { authError });
+        }
         setError(getSignInErrorMessage(authError));
         return;
       }

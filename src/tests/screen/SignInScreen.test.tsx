@@ -19,14 +19,17 @@ jest.mock("@/features/auth/api", () => ({
 
 describe("SignInScreen", () => {
   let consoleErrorSpy: jest.SpyInstance;
+  let consoleWarnSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
     consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
   });
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
   });
 
   it("submits credentials and routes to root on success", async () => {
@@ -81,5 +84,8 @@ describe("SignInScreen", () => {
         ),
       ).toBeTruthy();
     });
+
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+    expect(consoleWarnSpy).toHaveBeenCalled();
   });
 });

@@ -15,7 +15,10 @@ import {
   isBlank,
   isLikelyEmail,
 } from "@/utils/validation";
-import { getSignUpErrorMessage } from "@/utils/userFacingErrors";
+import {
+  getSignUpErrorMessage,
+  isExpectedSignUpAuthError,
+} from "@/utils/userFacingErrors";
 
 export default function SignUpScreen() {
   const [email, setEmail] = useState("");
@@ -55,7 +58,13 @@ export default function SignUpScreen() {
       );
 
       if (authError) {
-        logger.error("Failed to sign up", { authError, email: email.trim() });
+        if (isExpectedSignUpAuthError(authError)) {
+          logger.warn("Sign-up rejected by Supabase", {
+            reason: "validation_or_existing_account",
+          });
+        } else {
+          logger.error("Failed to sign up", { authError });
+        }
         setError(getSignUpErrorMessage(authError));
         return;
       }
@@ -66,7 +75,7 @@ export default function SignUpScreen() {
       }
 
       logger.error("Sign-up completed without a session", {
-        email: email.trim(),
+        attemptedEmail: email.trim(),
       });
       setError(
         "Sign-up did not return a session. For MVP testing, Supabase email confirmation must be OFF. Verify the hosted Supabase auth setting and try again.",
