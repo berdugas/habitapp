@@ -18,8 +18,15 @@ jest.mock("@/features/auth/api", () => ({
 }));
 
 describe("SignUpScreen", () => {
+  let consoleErrorSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   it("submits credentials and routes to root when sign-up returns a session", async () => {
@@ -109,7 +116,18 @@ describe("SignUpScreen", () => {
     fireEvent.press(screen.getByText("Sign Up"));
 
     await waitFor(() => {
-      expect(screen.getByText("Email is invalid")).toBeTruthy();
+      expect(
+        screen.getByText("Enter a valid email address and try again."),
+      ).toBeTruthy();
     });
+  });
+
+  it("blocks blank input before calling Supabase", () => {
+    render(<SignUpScreen />);
+
+    fireEvent.press(screen.getByText("Sign Up"));
+
+    expect(screen.getByText("Email is required.")).toBeTruthy();
+    expect(mockSignUpWithPassword).not.toHaveBeenCalled();
   });
 });

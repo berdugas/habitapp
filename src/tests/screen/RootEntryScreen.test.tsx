@@ -80,6 +80,24 @@ describe("RootEntryScreen", () => {
     ).toBeTruthy();
   });
 
+  it("shows an error instead of misrouting when active habits fail to load", () => {
+    useAuthSession.mockReturnValue({
+      isBootstrapping: false,
+      session: { user: { id: "user-1" } },
+    });
+    useActiveHabitsQuery.mockReturnValue({
+      data: [],
+      error: new Error("boom"),
+      isLoading: false,
+    });
+
+    render(<RootEntryScreen />);
+
+    expect(
+      screen.getByText("We couldn't load your habits right now. Try again."),
+    ).toBeTruthy();
+  });
+
   it("shows loading while auth bootstraps", () => {
     useAuthSession.mockReturnValue({
       isBootstrapping: true,

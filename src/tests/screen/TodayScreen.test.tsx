@@ -17,6 +17,7 @@ const {
 
 describe("TodayScreen", () => {
   const mockMutate = jest.fn();
+  const mockMutateAsync = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -24,7 +25,9 @@ describe("TodayScreen", () => {
       error: null,
       isPending: false,
       mutate: mockMutate,
+      mutateAsync: mockMutateAsync,
     });
+    mockMutateAsync.mockResolvedValue(undefined);
   });
 
   it("renders the created habit and its persisted today status", () => {
@@ -74,9 +77,75 @@ describe("TodayScreen", () => {
 
     fireEvent.press(screen.getByText("Skipped"));
 
-    expect(mockMutate).toHaveBeenCalledWith({
+    expect(mockMutateAsync).toHaveBeenCalledWith({
       habitId: "habit-1",
       status: "skipped",
     });
+  });
+
+  it("shows a friendly save error instead of the raw mutation message", () => {
+    useUpsertTodayHabitStatusMutation.mockReturnValue({
+      error: new Error("database exploded"),
+      isPending: false,
+      mutate: mockMutate,
+      mutateAsync: mockMutateAsync,
+    });
+    useTodayHabits.mockReturnValue({
+      error: null,
+      habits: [
+        {
+          consistencyRate: 0,
+          formula: "After I brush my teeth, I will Read 1 page.",
+          id: "habit-1",
+          name: "Reading",
+          skipCount: 0,
+          streak: 0,
+          todayStatus: null,
+        },
+      ],
+      isLoading: false,
+    });
+
+    render(<TodayScreen />);
+
+    expect(
+      screen.getByText("We couldn't save today's status right now. Try again."),
+    ).toBeTruthy();
+  });
+
+  it("prevents a second status write while the first one is still in flight", async () => {
+    let resolveMutation: (() => void) | undefined;
+
+    mockMutateAsync.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolveMutation = resolve;
+      }),
+    );
+    useTodayHabits.mockReturnValue({
+      error: null,
+      habits: [
+        {
+          consistencyRate: 0,
+          formula: "After I brush my teeth, I will Read 1 page.",
+          id: "habit-1",
+          name: "Reading",
+          skipCount: 0,
+          streak: 0,
+          todayStatus: null,
+        },
+      ],
+      isLoading: false,
+    });
+
+    render(<TodayScreen />);
+
+    fireEvent.press(screen.getByText("Done"));
+    fireEvent.press(screen.getByText("Done"));
+
+    expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+
+    if (resolveMutation) {
+      resolveMutation();
+    }
   });
 });

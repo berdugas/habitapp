@@ -32,6 +32,7 @@ export async function getActiveHabits(userId: string) {
     .order("created_at", { ascending: true });
 
   if (error) {
+    logger.error("Failed to fetch active habits", { error, userId });
     throw error;
   }
 

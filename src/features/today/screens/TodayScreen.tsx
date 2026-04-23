@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { HabitCard } from "@/components/cards/HabitCard";
@@ -11,6 +12,10 @@ import {
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
 import { spacing } from "@/theme/spacing";
+import {
+  getLoadHabitsErrorMessage,
+  getSaveTodayStatusErrorMessage,
+} from "@/utils/userFacingErrors";
 
 import type { HabitLogStatus } from "@/features/habits/types";
 
@@ -42,13 +47,34 @@ function formatStreak(streak: number) {
 export default function TodayScreen() {
   const { error, habits, isLoading } = useTodayHabits();
   const upsertTodayHabitStatusMutation = useUpsertTodayHabitStatusMutation();
+  const statusSubmitLockRef = useRef(false);
+
+  async function handleStatusPress(habitId: string, status: HabitLogStatus) {
+    if (
+      statusSubmitLockRef.current ||
+      upsertTodayHabitStatusMutation.isPending
+    ) {
+      return;
+    }
+
+    statusSubmitLockRef.current = true;
+
+    try {
+      await upsertTodayHabitStatusMutation.mutateAsync({
+        habitId,
+        status,
+      });
+    } finally {
+      statusSubmitLockRef.current = false;
+    }
+  }
 
   if (isLoading) {
     return <LoadingState message="Loading your Today view..." />;
   }
 
   if (error) {
-    return <ErrorState message={error.message} />;
+    return <ErrorState message={getLoadHabitsErrorMessage()} />;
   }
 
   return (
@@ -68,7 +94,7 @@ export default function TodayScreen() {
       </View>
 
       {upsertTodayHabitStatusMutation.error ? (
-        <ErrorState message={upsertTodayHabitStatusMutation.error.message} />
+        <ErrorState message={getSaveTodayStatusErrorMessage()} />
       ) : null}
 
       {habits.length === 0 ? (
@@ -119,12 +145,7 @@ export default function TodayScreen() {
                     accessibilityRole="button"
                     disabled={upsertTodayHabitStatusMutation.isPending}
                     key={option.value}
-                    onPress={() =>
-                      upsertTodayHabitStatusMutation.mutate({
-                        habitId: habit.id,
-                        status: option.value,
-                      })
-                    }
+                    onPress={() => void handleStatusPress(habit.id, option.value)}
                     style={[
                       styles.statusButton,
                       isSelected && styles.statusButtonSelected,

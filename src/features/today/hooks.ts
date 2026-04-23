@@ -7,6 +7,7 @@ import {
 } from "@/features/habits/api";
 import { useActiveHabitsQuery } from "@/features/habits/hooks";
 import { summarizeHabitProgress } from "@/features/today/progress";
+import { logger } from "@/services/logger";
 import {
   getTrailingDateRangeStrings,
   toDeviceDateString,
@@ -104,6 +105,14 @@ export function useUpsertTodayHabitStatusMutation() {
       await queryClient.fetchQuery({
         queryFn: () => getHabitLogsInRange(user.id, startDate, endDate),
         queryKey,
+      });
+    },
+    onError: (error, variables) => {
+      logger.error("Today status mutation failed", {
+        error,
+        habitId: variables.habitId,
+        status: variables.status,
+        userId: user?.id ?? null,
       });
     },
   });

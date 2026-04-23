@@ -549,6 +549,7 @@ Supabase backend
 
 ### Streak logic
 A streak increases when the habit is marked done on consecutive valid days.
+- for this MVP phase, a calendar day with no persisted log also breaks the streak
 
 ### Completion rate
 - 7-day completion rate

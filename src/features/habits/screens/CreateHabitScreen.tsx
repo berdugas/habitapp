@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -13,10 +13,15 @@ import {
   getActiveHabitsQueryKey,
   useCreateHabitMutation,
 } from "@/features/habits/hooks";
+import { logger } from "@/services/logger";
 import { validateCreateHabitPayload } from "@/features/habits/validators";
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
 import { spacing } from "@/theme/spacing";
+import {
+  getCreateHabitErrorMessage,
+  getRefreshHabitsErrorMessage,
+} from "@/utils/userFacingErrors";
 
 export default function CreateHabitScreen() {
   const [name, setName] = useState("");
@@ -27,6 +32,7 @@ export default function CreateHabitScreen() {
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderTime, setReminderTime] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const submitLockRef = useRef(false);
 
   const { user } = useAuthSession();
   const queryClient = useQueryClient();
@@ -48,6 +54,10 @@ export default function CreateHabitScreen() {
   );
 
   async function handleSave() {
+    if (submitLockRef.current || createHabitMutation.isPending) {
+      return;
+    }
+
     setFormError(null);
 
     if (Object.keys(validationErrors).length > 0) {
@@ -55,8 +65,12 @@ export default function CreateHabitScreen() {
       return;
     }
 
+    submitLockRef.current = true;
+    let hasSavedHabit = false;
+
     try {
       await createHabitMutation.mutateAsync(payload);
+      hasSavedHabit = true;
       if (!user?.id) {
         throw new Error("We could not refresh your habit list right now.");
       }
@@ -70,9 +84,19 @@ export default function CreateHabitScreen() {
       });
       router.replace("/(app)/(tabs)/today");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Could not save your habit.";
-      setFormError(message);
+      logger.error("Create habit flow failed", {
+        error,
+        payload,
+        userId: user?.id ?? null,
+      });
+
+      if (hasSavedHabit) {
+        setFormError(getRefreshHabitsErrorMessage());
+      } else {
+        setFormError(getCreateHabitErrorMessage());
+      }
+    } finally {
+      submitLockRef.current = false;
     }
   }
 

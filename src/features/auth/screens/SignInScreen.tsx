@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 
@@ -7,30 +7,70 @@ import { SecondaryButton } from "@/components/buttons/SecondaryButton";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { TextField } from "@/components/forms/TextField";
 import { signInWithPassword } from "@/features/auth/api";
+import { logger } from "@/services/logger";
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
 import { spacing } from "@/theme/spacing";
+import {
+  isBlank,
+  isLikelyEmail,
+} from "@/utils/validation";
+import { getSignInErrorMessage } from "@/utils/userFacingErrors";
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitLockRef = useRef(false);
 
   async function handleSubmit() {
-    setIsSubmitting(true);
-    setError(null);
-
-    const { error: authError } = await signInWithPassword(email.trim(), password);
-
-    setIsSubmitting(false);
-
-    if (authError) {
-      setError(authError.message);
+    if (submitLockRef.current) {
       return;
     }
 
-    router.replace("/");
+    if (isBlank(email)) {
+      setError("Email is required.");
+      return;
+    }
+
+    if (!isLikelyEmail(email)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+
+    if (isBlank(password)) {
+      setError("Password is required.");
+      return;
+    }
+
+    submitLockRef.current = true;
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const { error: authError } = await signInWithPassword(
+        email.trim(),
+        password,
+      );
+
+      if (authError) {
+        logger.error("Failed to sign in", { authError, email: email.trim() });
+        setError(getSignInErrorMessage(authError));
+        return;
+      }
+
+      router.replace("/");
+    } catch (unexpectedError) {
+      logger.error("Sign-in request threw unexpectedly", {
+        email: email.trim(),
+        unexpectedError,
+      });
+      setError(getSignInErrorMessage(unexpectedError));
+    } finally {
+      submitLockRef.current = false;
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -71,6 +111,7 @@ export default function SignInScreen() {
           onPress={handleSubmit}
         />
         <SecondaryButton
+          disabled={isSubmitting}
           label="Create an account"
           onPress={() => router.push("/(auth)/sign-up")}
         />

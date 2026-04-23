@@ -46,8 +46,11 @@ const { getActiveHabitsQueryKey, useCreateHabitMutation } = jest.requireMock(
 };
 
 describe("CreateHabitScreen", () => {
+  let consoleErrorSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
     mockUseAuthSession.mockReturnValue({
       isBootstrapping: false,
       session: { user: { id: "user-1" } },
@@ -66,6 +69,10 @@ describe("CreateHabitScreen", () => {
     mockMutateAsync.mockResolvedValue({
       id: "habit-1",
     });
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   it("submits the first habit, refetches active habits, and then routes to today", async () => {
@@ -134,10 +141,47 @@ describe("CreateHabitScreen", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Could not refresh habits."),
+        screen.getByText(
+          "We saved your habit, but we couldn't refresh Today right now. Try again.",
+        ),
       ).toBeTruthy();
     });
 
     expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it("prevents a second save while the first one is still in flight", async () => {
+    let resolveSave: ((value: { id: string }) => void) | undefined;
+
+    mockMutateAsync.mockReturnValue(
+      new Promise<{ id: string }>((resolve) => {
+        resolveSave = resolve;
+      }),
+    );
+
+    render(<CreateHabitScreen />);
+
+    fireEvent.changeText(screen.getByPlaceholderText("Reading"), "Reading");
+    fireEvent.changeText(
+      screen.getByPlaceholderText("After I brush my teeth"),
+      "I brush my teeth",
+    );
+    fireEvent.changeText(
+      screen.getByPlaceholderText("Read 1 page"),
+      "Read 1 page",
+    );
+
+    fireEvent.press(screen.getByText("Save Habit"));
+    fireEvent.press(screen.getByText("Save Habit"));
+
+    expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+
+    if (resolveSave) {
+      resolveSave({ id: "habit-1" });
+    }
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith("/(app)/(tabs)/today");
+    });
   });
 });

@@ -571,6 +571,7 @@ Need a clear rule for skipped days.
 ### Recommended MVP rule
 - skipped does not increase streak
 - skipped breaks the streak
+- a calendar day with no persisted log also breaks the streak
 
 This is simpler technically and easier to explain.
 
@@ -895,4 +896,3 @@ The client should focus on a clean, fast daily experience.
 The backend should own persistence, access control, AI orchestration, and reliable business rules.
 
 This tighter structure reduces implementation drift and gives the team a clearer path from specification to code.
-

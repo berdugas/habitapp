@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 
@@ -7,40 +7,80 @@ import { SecondaryButton } from "@/components/buttons/SecondaryButton";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { TextField } from "@/components/forms/TextField";
 import { signUpWithPassword } from "@/features/auth/api";
+import { logger } from "@/services/logger";
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
 import { spacing } from "@/theme/spacing";
+import {
+  isBlank,
+  isLikelyEmail,
+} from "@/utils/validation";
+import { getSignUpErrorMessage } from "@/utils/userFacingErrors";
 
 export default function SignUpScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitLockRef = useRef(false);
 
   async function handleSubmit() {
+    if (submitLockRef.current) {
+      return;
+    }
+
+    if (isBlank(email)) {
+      setError("Email is required.");
+      return;
+    }
+
+    if (!isLikelyEmail(email)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+
+    if (isBlank(password)) {
+      setError("Password is required.");
+      return;
+    }
+
+    submitLockRef.current = true;
     setIsSubmitting(true);
     setError(null);
 
-    const { data, error: authError } = await signUpWithPassword(
-      email.trim(),
-      password,
-    );
+    try {
+      const { data, error: authError } = await signUpWithPassword(
+        email.trim(),
+        password,
+      );
 
-    setIsSubmitting(false);
+      if (authError) {
+        logger.error("Failed to sign up", { authError, email: email.trim() });
+        setError(getSignUpErrorMessage(authError));
+        return;
+      }
 
-    if (authError) {
-      setError(authError.message);
-      return;
+      if (data.session) {
+        router.replace("/");
+        return;
+      }
+
+      logger.error("Sign-up completed without a session", {
+        email: email.trim(),
+      });
+      setError(
+        "Sign-up did not return a session. For MVP testing, Supabase email confirmation must be OFF. Verify the hosted Supabase auth setting and try again.",
+      );
+    } catch (unexpectedError) {
+      logger.error("Sign-up request threw unexpectedly", {
+        email: email.trim(),
+        unexpectedError,
+      });
+      setError(getSignUpErrorMessage(unexpectedError));
+    } finally {
+      submitLockRef.current = false;
+      setIsSubmitting(false);
     }
-
-    if (data.session) {
-      router.replace("/");
-      return;
-    }
-
-    setError(
-      "Sign-up did not return a session. For MVP testing, Supabase email confirmation must be OFF. Verify the hosted Supabase auth setting and try again.",
-    );
   }
 
   return (
@@ -82,6 +122,7 @@ export default function SignUpScreen() {
           onPress={handleSubmit}
         />
         <SecondaryButton
+          disabled={isSubmitting}
           label="I already have an account"
           onPress={() => router.push("/(auth)/sign-in")}
         />
