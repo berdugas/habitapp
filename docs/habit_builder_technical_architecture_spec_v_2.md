@@ -400,8 +400,10 @@ This should be explicit:
 
 ### 8.1 Welcome screen
 - decide next route
-- if no habit exists, go to create habit
-- if habit exists, go to today
+- if no signed-in session exists, show welcome/auth entry
+- if signed in and there are eligible habits for today, go to Today
+- if signed in and there are only future-dated active habits, go to Today and show upcoming state
+- if signed in and there are no eligible or upcoming active habits, go to create habit
 
 ### 8.2 Create Habit screen
 - local form state
@@ -417,7 +419,8 @@ This should be explicit:
 - navigate to today
 
 ### 8.4 Today screen
-- fetch active habits
+- fetch eligible habits for today: `is_active = true` and `start_date <= today`
+- fetch upcoming active habits separately: `is_active = true` and `start_date > today`
 - fetch today log status for each habit
 - render consistency, streak, skip count
 - allow daily status update
@@ -468,9 +471,12 @@ Core fields:
 - preferred_time_window
 - reminder_enabled
 - reminder_time
+- start_date
 - is_active
 - created_at
 - updated_at
+
+`start_date` is the earliest logical device-local day when the habit becomes eligible for logging. In Phase 2A it is system-defaulted on creation and has no future-start UX.
 
 #### habit_context
 Optional per habit:
@@ -495,7 +501,7 @@ One row per habit per date:
 - created_at
 
 Recommended constraint:
-- unique `(habit_id, log_date)`
+- unique `(user_id, habit_id, log_date)`
 
 #### weekly_reviews
 - id
@@ -592,7 +598,8 @@ Recommendation:
 ## 12. Query and API Responsibilities
 
 ### 12.1 Habit queries
-- `getActiveHabits(userId)`
+- `getEligibleHabits(userId, todayDate)`
+- `getUpcomingActiveHabits(userId, todayDate)`
 - `getHabitById(habitId)`
 - `createHabit(payload)`
 - `updateHabit(habitId, payload)`
@@ -881,7 +888,7 @@ These are the technical decisions I recommend locking now:
 - AsyncStorage or MMKV chosen explicitly and documented
 - local notifications first
 - backend-controlled AI orchestration
-- unique daily log per habit/date
+- unique daily log per user/habit/date
 - client-calculated progress display, backend-validated AI trigger checks
 - generated Supabase types committed in repo
 - centralized provider shell in `app/_layout.tsx`
