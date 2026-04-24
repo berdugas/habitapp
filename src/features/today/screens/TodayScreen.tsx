@@ -95,8 +95,8 @@ export default function TodayScreen() {
           Today
         </Text>
         <Text selectable style={styles.body}>
-          Stay honest with the habit today, even if the answer is skipped or
-          missed.
+          Log what happened today. Done, skipped, or missed - honesty helps you
+          improve.
         </Text>
       </View>
 

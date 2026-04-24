@@ -36,6 +36,53 @@ describe("TodayScreen", () => {
     mockMutateAsync.mockResolvedValue(undefined);
   });
 
+  it("shows a loading state while today data is still resolving", () => {
+    useTodayHabits.mockReturnValue({
+      error: null,
+      habits: [],
+      isLoading: true,
+      upcomingHabits: [],
+    });
+
+    render(<TodayScreen />);
+
+    expect(screen.getByText("Loading your Today view...")).toBeTruthy();
+    expect(screen.queryByText("No active habits yet")).toBeNull();
+  });
+
+  it("shows a friendly load error instead of an empty state when today data fails", () => {
+    useTodayHabits.mockReturnValue({
+      error: new Error("query failed"),
+      habits: [],
+      isLoading: false,
+      upcomingHabits: [],
+    });
+
+    render(<TodayScreen />);
+
+    expect(
+      screen.getByText("We couldn't load your habits right now. Try again."),
+    ).toBeTruthy();
+    expect(screen.queryByText("No active habits yet")).toBeNull();
+  });
+
+  it("shows the softer guidance copy on the today screen", () => {
+    useTodayHabits.mockReturnValue({
+      error: null,
+      habits: [],
+      isLoading: false,
+      upcomingHabits: [],
+    });
+
+    render(<TodayScreen />);
+
+    expect(
+      screen.getByText(
+        "Log what happened today. Done, skipped, or missed - honesty helps you improve.",
+      ),
+    ).toBeTruthy();
+  });
+
   it("renders the created habit and its persisted today status", () => {
     useTodayHabits.mockReturnValue({
       error: null,
@@ -62,6 +109,58 @@ describe("TodayScreen", () => {
     expect(screen.getByText("67%")).toBeTruthy();
     expect(screen.getByText("2 days")).toBeTruthy();
   });
+
+  it("shows that today's habit has not been logged yet when no persisted status exists", () => {
+    useTodayHabits.mockReturnValue({
+      error: null,
+      habits: [
+        {
+          consistencyRate: 0,
+          formula: "After I brush my teeth, I will Read 1 page.",
+          id: "habit-1",
+          name: "Reading",
+          skipCount: 0,
+          streak: 0,
+          todayStatus: null,
+        },
+      ],
+      isLoading: false,
+      upcomingHabits: [],
+    });
+
+    render(<TodayScreen />);
+
+    expect(screen.getByText("Today not logged yet")).toBeTruthy();
+  });
+
+  it.each([
+    ["skipped", "Today: Skipped"],
+    ["missed", "Today: Missed"],
+  ] as const)(
+    "shows the persisted %s status label",
+    (todayStatus, expectedLabel) => {
+      useTodayHabits.mockReturnValue({
+        error: null,
+        habits: [
+          {
+            consistencyRate: 0,
+            formula: "After I brush my teeth, I will Read 1 page.",
+            id: "habit-1",
+            name: "Reading",
+            skipCount: 0,
+            streak: 0,
+            todayStatus,
+          },
+        ],
+        isLoading: false,
+        upcomingHabits: [],
+      });
+
+      render(<TodayScreen />);
+
+      expect(screen.getByText(expectedLabel)).toBeTruthy();
+    },
+  );
 
   it("writes a skipped status for the selected habit", () => {
     useTodayHabits.mockReturnValue({
@@ -159,6 +258,24 @@ describe("TodayScreen", () => {
     }
   });
 
+  it("shows the empty state only when there are no eligible or upcoming habits", () => {
+    useTodayHabits.mockReturnValue({
+      error: null,
+      habits: [],
+      isLoading: false,
+      upcomingHabits: [],
+    });
+
+    render(<TodayScreen />);
+
+    expect(screen.getByText("No active habits yet")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Create your first active habit and it will show up here right away.",
+      ),
+    ).toBeTruthy();
+  });
+
   it("shows the upcoming state when active habits are scheduled for later", () => {
     useTodayHabits.mockReturnValue({
       error: null,
@@ -178,6 +295,10 @@ describe("TodayScreen", () => {
 
     expect(screen.getByText("Nothing starts today yet")).toBeTruthy();
     expect(screen.getByText("Meditation")).toBeTruthy();
+    expect(screen.getByText(/Starts on/i)).toBeTruthy();
     expect(screen.getByText("Create another habit")).toBeTruthy();
+    expect(screen.queryByText("Done")).toBeNull();
+    expect(screen.queryByText("Skipped")).toBeNull();
+    expect(screen.queryByText("Missed")).toBeNull();
   });
 });
