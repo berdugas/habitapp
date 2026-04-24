@@ -78,6 +78,10 @@ export function getLoadInactiveHabitsErrorMessage() {
   return "We couldn't load inactive habits right now. Try again.";
 }
 
+export function getSaveWeeklyReviewErrorMessage() {
+  return "We couldn't save your weekly review right now. Try again.";
+}
+
 export function getSaveTodayStatusErrorMessage() {
   return "We couldn't save today's status right now. Try again.";
 }

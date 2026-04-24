@@ -11,6 +11,8 @@ import {
   setHabitActiveState,
   updateHabit,
 } from "@/features/habits/api";
+import { getLatestWeeklyReview } from "@/features/reviews/api";
+import { getLatestWeeklyReviewQueryKey } from "@/features/reviews/queryKeys";
 import { summarizeHabitProgress } from "@/features/today/progress";
 import { trackEvent } from "@/services/analytics";
 import { logger } from "@/services/logger";
@@ -26,6 +28,7 @@ import type {
   HabitLogRecord,
   HabitRecord,
 } from "@/features/habits/types";
+import type { WeeklyReviewRecord } from "@/features/reviews/types";
 
 export function getEligibleHabitsQueryKey(
   userId: string | undefined,
@@ -96,6 +99,7 @@ type UseHabitDetailResult = {
   habit: HabitRecord | null;
   isLoading: boolean;
   isUpcoming: boolean;
+  latestReview: WeeklyReviewRecord | null;
   recentLogs: HabitLogRecord[];
   progress: ReturnType<typeof summarizeHabitProgress>;
 };
@@ -149,8 +153,14 @@ export function useHabitDetail(
       getHabitLogsForHabitInRange(user!.id, habitId!, startDate, endDate),
     queryKey: getHabitDetailLogsQueryKey(user?.id, habitId, startDate, endDate),
   });
+  const latestReviewQuery = useQuery({
+    enabled: Boolean(user?.id && habitId),
+    queryFn: () => getLatestWeeklyReview(user!.id, habitId!),
+    queryKey: getLatestWeeklyReviewQueryKey(user?.id, habitId),
+  });
 
   const habit = habitQuery.data ?? null;
+  const latestReview = latestReviewQuery.data ?? null;
   const recentLogs = habitLogsQuery.data ?? [];
 
   return {
@@ -158,13 +168,19 @@ export function useHabitDetail(
       routeError ??
       (habitQuery.error as Error | null) ??
       (habitLogsQuery.error as Error | null) ??
+      (latestReviewQuery.error as Error | null) ??
       null,
     formula: habit
       ? `After ${habit.stack_trigger}, I will ${habit.tiny_action}.`
       : "",
     habit,
-    isLoading: !routeError && (habitQuery.isLoading || habitLogsQuery.isLoading),
+    isLoading:
+      !routeError &&
+      (habitQuery.isLoading ||
+        habitLogsQuery.isLoading ||
+        latestReviewQuery.isLoading),
     isUpcoming: habit ? habit.start_date > endDate : false,
+    latestReview,
     progress: summarizeHabitProgress({
       endDate: endDateObject,
       logs: recentLogs,

@@ -213,7 +213,9 @@ export type Database = {
           trigger_worked: boolean | null;
           updated_at: string;
           user_id: string;
+          was_hard: string | null;
           week_start: string;
+          went_well: string | null;
         };
         Insert: {
           adjustment_note?: string | null;
@@ -224,7 +226,9 @@ export type Database = {
           trigger_worked?: boolean | null;
           updated_at?: string;
           user_id: string;
+          was_hard?: string | null;
           week_start: string;
+          went_well?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["weekly_reviews"]["Insert"]>;
         Relationships: [];

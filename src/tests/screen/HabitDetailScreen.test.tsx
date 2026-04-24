@@ -148,6 +148,11 @@ describe("HabitDetailScreen", () => {
     expect(
       screen.getByText("This removes the habit from Today, but keeps its history."),
     ).toBeTruthy();
+    expect(screen.getByText("Weekly review")).toBeTruthy();
+    expect(
+      screen.getByText("Reflect on what worked and what to adjust for this habit."),
+    ).toBeTruthy();
+    expect(screen.getByText("Start weekly review")).toBeTruthy();
     expect(screen.queryByText("Delete habit")).toBeNull();
     expect(screen.queryByText("Archive habit")).toBeNull();
     expect(screen.queryByText("Pause habit")).toBeNull();
@@ -155,6 +160,60 @@ describe("HabitDetailScreen", () => {
     fireEvent.press(screen.getByText("Edit habit"));
 
     expect(mockPush).toHaveBeenCalledWith("/(app)/habits/habit-1/edit");
+  });
+
+  it("shows the latest weekly review and routes to the review screen", () => {
+    mockUseHabitDetail.mockReturnValue({
+      error: null,
+      formula: "After breakfast, I will Read 1 page.",
+      habit: {
+        id: "habit-1",
+        identity_statement: null,
+        is_active: true,
+        name: "Reading",
+        preferred_time_window: null,
+        reminder_enabled: false,
+        reminder_time: null,
+        stack_trigger: "breakfast",
+        start_date: "2026-04-24",
+        tiny_action: "Read 1 page",
+      },
+      isLoading: false,
+      isUpcoming: false,
+      latestReview: {
+        adjustment_note: "Move the book to the table",
+        created_at: "2026-04-24T00:00:00.000Z",
+        habit_id: "habit-1",
+        id: "review-1",
+        tiny_action_too_hard: false,
+        trigger_worked: true,
+        updated_at: "2026-04-24T00:00:00.000Z",
+        user_id: "user-1",
+        was_hard: "Rushed mornings",
+        week_start: "2026-04-20",
+        went_well: "Breakfast cue worked",
+      },
+      progress: {
+        consistencyRate: 0,
+        skipCount: 0,
+        streak: 0,
+        todayStatus: null,
+      },
+      recentLogs: [],
+    });
+
+    render(<HabitDetailScreen />);
+
+    expect(screen.getByText("Latest weekly review")).toBeTruthy();
+    expect(screen.getByText("Breakfast cue worked")).toBeTruthy();
+    expect(screen.getByText("Rushed mornings")).toBeTruthy();
+    expect(screen.getByText("Move the book to the table")).toBeTruthy();
+    expect(screen.getByText("Yes")).toBeTruthy();
+    expect(screen.getByText("No")).toBeTruthy();
+
+    fireEvent.press(screen.getByText("Update weekly review"));
+
+    expect(mockPush).toHaveBeenCalledWith("/(app)/reviews/habit-1");
   });
 
   it("hides optional setup fields when they are absent", () => {
