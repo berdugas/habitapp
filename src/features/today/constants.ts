@@ -1,0 +1,1 @@
+export const TODAY_PROGRESS_WINDOW_DAYS = 30;

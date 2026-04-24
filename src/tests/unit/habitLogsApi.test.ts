@@ -225,7 +225,7 @@ describe("upsertHabitLog", () => {
     ).rejects.toBe(lookupError);
 
     expect(mockLoggerError).toHaveBeenCalledWith(
-      "Failed to load owned habit for logging",
+      "Failed to load owned habit",
       {
         error: lookupError,
         habitId: "habit-404",

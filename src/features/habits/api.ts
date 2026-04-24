@@ -106,7 +106,7 @@ export async function getHabitLogsInRange(
   return (data ?? []) as HabitLogRecord[];
 }
 
-async function getOwnedHabit(userId: string, habitId: string) {
+export async function getHabitById(userId: string, habitId: string) {
   const { data, error } = await supabase
     .from("habits")
     .select("*")
@@ -115,7 +115,7 @@ async function getOwnedHabit(userId: string, habitId: string) {
     .single();
 
   if (error) {
-    logger.error("Failed to load owned habit for logging", {
+    logger.error("Failed to load owned habit", {
       error,
       habitId,
       userId,
@@ -126,11 +126,40 @@ async function getOwnedHabit(userId: string, habitId: string) {
   return data as HabitRecord;
 }
 
+export async function getHabitLogsForHabitInRange(
+  userId: string,
+  habitId: string,
+  startDate: string,
+  endDate: string,
+) {
+  const { data, error } = await supabase
+    .from("habit_logs")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("habit_id", habitId)
+    .gte("log_date", startDate)
+    .lte("log_date", endDate)
+    .order("log_date", { ascending: false });
+
+  if (error) {
+    logger.error("Failed to fetch habit detail logs", {
+      endDate,
+      error,
+      habitId,
+      startDate,
+      userId,
+    });
+    throw error;
+  }
+
+  return (data ?? []) as HabitLogRecord[];
+}
+
 export async function upsertHabitLog(
   userId: string,
   payload: UpsertHabitLogPayload,
 ) {
-  const habit = await getOwnedHabit(userId, payload.habitId);
+  const habit = await getHabitById(userId, payload.habitId);
 
   if (!habit.is_active) {
     logger.warn("Rejected habit log for inactive habit", {

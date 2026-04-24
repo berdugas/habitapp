@@ -70,6 +70,10 @@ export function getLoadHabitsErrorMessage() {
   return "We couldn't load your habits right now. Try again.";
 }
 
+export function getLoadHabitDetailErrorMessage() {
+  return "We couldn't load this habit right now. Try again.";
+}
+
 export function getSaveTodayStatusErrorMessage() {
   return "We couldn't save today's status right now. Try again.";
 }

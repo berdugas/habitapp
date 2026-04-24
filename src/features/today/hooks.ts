@@ -15,14 +15,13 @@ import {
   getTrailingDateRangeStrings,
   toDeviceDateString,
 } from "@/utils/dates";
+import { TODAY_PROGRESS_WINDOW_DAYS } from "@/features/today/constants";
 
 import type { HabitLogRecord, HabitLogStatus } from "@/features/habits/types";
 import type {
   TodayHabitCardData,
   UpcomingHabitCardData,
 } from "@/features/today/types";
-
-export const TODAY_PROGRESS_WINDOW_DAYS = 30;
 
 export function getHabitLogsRangeQueryKey(
   userId: string | undefined,

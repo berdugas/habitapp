@@ -112,6 +112,31 @@ describe("TodayScreen", () => {
     expect(screen.getByText("2 days")).toBeTruthy();
   });
 
+  it("opens detail when an eligible habit card is pressed", () => {
+    useTodayHabits.mockReturnValue({
+      error: null,
+      habits: [
+        {
+          consistencyRate: 0,
+          formula: "After I brush my teeth, I will Read 1 page.",
+          id: "habit-1",
+          name: "Reading",
+          skipCount: 0,
+          streak: 0,
+          todayStatus: null,
+        },
+      ],
+      isLoading: false,
+      upcomingHabits: [],
+    });
+
+    render(<TodayScreen />);
+
+    fireEvent.press(screen.getByLabelText("Reading details"));
+
+    expect(mockPush).toHaveBeenCalledWith("/(app)/habits/habit-1");
+  });
+
   it("updates the visible progress values when the hook returns refreshed persisted data", () => {
     useTodayHabits
       .mockReturnValueOnce({
@@ -245,6 +270,7 @@ describe("TodayScreen", () => {
       habitId: "habit-1",
       status: "skipped",
     });
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -407,5 +433,27 @@ describe("TodayScreen", () => {
     expect(screen.queryByText("Done")).toBeNull();
     expect(screen.queryByText("Skipped")).toBeNull();
     expect(screen.queryByText("Missed")).toBeNull();
+  });
+
+  it("opens detail when an upcoming habit card is pressed", () => {
+    useTodayHabits.mockReturnValue({
+      error: null,
+      habits: [],
+      isLoading: false,
+      upcomingHabits: [
+        {
+          formula: "After I wake up, I will Meditate for 1 minute.",
+          id: "habit-2",
+          name: "Meditation",
+          startDate: "2026-05-02",
+        },
+      ],
+    });
+
+    render(<TodayScreen />);
+
+    fireEvent.press(screen.getByLabelText("Meditation details"));
+
+    expect(mockPush).toHaveBeenCalledWith("/(app)/habits/habit-2");
   });
 });

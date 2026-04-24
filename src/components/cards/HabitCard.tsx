@@ -22,21 +22,38 @@ export function HabitCard({
   name,
   onPress,
 }: HabitCardProps) {
-  return (
-    <Pressable disabled={!onPress} onPress={onPress} style={styles.card}>
+  const headerContent = (
+    <>
       <Text selectable style={styles.name}>
         {name}
       </Text>
       <Text selectable style={styles.formula}>
         {formula}
       </Text>
-      {children}
       <View style={styles.metaRow}>
         <Text selectable style={styles.metaText}>
           {metaText}
         </Text>
       </View>
-    </Pressable>
+    </>
+  );
+
+  return (
+    <View style={styles.card}>
+      {onPress ? (
+        <Pressable
+          accessibilityLabel={`${name} details`}
+          accessibilityRole="button"
+          onPress={onPress}
+          style={styles.headerPressable}
+        >
+          {headerContent}
+        </Pressable>
+      ) : (
+        headerContent
+      )}
+      {children}
+    </View>
   );
 }
 
@@ -54,6 +71,9 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 15,
     lineHeight: 22,
+  },
+  headerPressable: {
+    gap: spacing.md,
   },
   metaRow: {
     backgroundColor: colors.accentSoft,

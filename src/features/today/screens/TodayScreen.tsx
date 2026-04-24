@@ -57,6 +57,10 @@ export default function TodayScreen() {
   const upsertTodayHabitStatusMutation = useUpsertTodayHabitStatusMutation();
   const statusSubmitLockRef = useRef(false);
 
+  function openHabitDetail(habitId: string) {
+    router.push(`/(app)/habits/${habitId}`);
+  }
+
   async function handleStatusPress(habitId: string, status: HabitLogStatus) {
     if (
       statusSubmitLockRef.current ||
@@ -128,6 +132,7 @@ export default function TodayScreen() {
               key={habit.id}
               metaText={formatStartDateLabel(habit.startDate)}
               name={habit.name}
+              onPress={() => openHabitDetail(habit.id)}
             />
           ))}
           <SecondaryButton
@@ -142,6 +147,7 @@ export default function TodayScreen() {
             key={habit.id}
             metaText={formatTodayStatus(habit.todayStatus)}
             name={habit.name}
+            onPress={() => openHabitDetail(habit.id)}
           >
             <View style={styles.progressGrid}>
               <View style={styles.progressItem}>
