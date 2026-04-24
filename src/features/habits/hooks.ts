@@ -5,6 +5,7 @@ import {
   createHabit,
   getEligibleHabits,
   getHabitById,
+  getInactiveHabits,
   getHabitLogsForHabitInRange,
   getUpcomingActiveHabits,
   setHabitActiveState,
@@ -38,6 +39,10 @@ export function getUpcomingActiveHabitsQueryKey(
   todayDate: string,
 ) {
   return ["habits", "upcoming", userId ?? "guest", todayDate];
+}
+
+export function getInactiveHabitsQueryKey(userId: string | undefined) {
+  return ["habits", "inactive", userId ?? "guest"];
 }
 
 export function getHabitDetailQueryKey(
@@ -113,6 +118,16 @@ export function useOwnedHabitQuery(
     enabled: Boolean(user?.id && habitId),
     queryFn: () => getHabitById(user!.id, habitId!),
     queryKey: getHabitDetailQueryKey(user?.id, habitId),
+  });
+}
+
+export function useInactiveHabitsQuery() {
+  const { user } = useAuthSession();
+
+  return useQuery({
+    enabled: Boolean(user?.id),
+    queryFn: () => getInactiveHabits(user!.id),
+    queryKey: getInactiveHabitsQueryKey(user?.id),
   });
 }
 
@@ -195,6 +210,9 @@ async function invalidateHabitSurfaceQueries(
   });
   await queryClient.invalidateQueries({
     queryKey: getUpcomingActiveHabitsQueryKey(userId, todayDate),
+  });
+  await queryClient.invalidateQueries({
+    queryKey: getInactiveHabitsQueryKey(userId),
   });
 }
 

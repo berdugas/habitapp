@@ -11,6 +11,7 @@ import {
   useOwnedHabitQuery,
   useUpdateHabitMutation,
 } from "@/features/habits/hooks";
+import { normalizeHabitReminderTime } from "@/features/habits/time";
 import {
   normalizeHabitSetupPayload,
   validateHabitSetupPayload,
@@ -65,7 +66,7 @@ export default function EditHabitScreen() {
     setTinyAction(ownedHabitQuery.data.tiny_action);
     setPreferredTimeWindow(ownedHabitQuery.data.preferred_time_window ?? "");
     setReminderEnabled(ownedHabitQuery.data.reminder_enabled);
-    setReminderTime(ownedHabitQuery.data.reminder_time ?? "");
+    setReminderTime(normalizeHabitReminderTime(ownedHabitQuery.data.reminder_time));
     hasHydratedFormRef.current = true;
   }, [ownedHabitQuery.data]);
 

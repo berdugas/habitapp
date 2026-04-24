@@ -91,6 +91,31 @@ describe("EditHabitScreen", () => {
     expect(screen.getByDisplayValue("20:00")).toBeTruthy();
   });
 
+  it("normalizes database reminder times with seconds before showing the form", () => {
+    mockUseOwnedHabitQuery.mockReturnValue({
+      data: {
+        id: "habit-1",
+        identity_statement: "Become a reader",
+        is_active: true,
+        name: "Reading",
+        preferred_time_window: "Evening",
+        reminder_enabled: true,
+        reminder_time: "20:00:00",
+        stack_trigger: "After I brush my teeth",
+        start_date: "2026-04-24",
+        tiny_action: "Read 1 page",
+      },
+      error: null,
+      isLoading: false,
+    });
+
+    render(<EditHabitScreen />);
+
+    expect(screen.getByDisplayValue("20:00")).toBeTruthy();
+    expect(screen.queryByDisplayValue("20:00:00")).toBeNull();
+    expect(screen.queryByText("Use a valid 24-hour time like 20:00.")).toBeNull();
+  });
+
   it("blocks blank required edits before saving", async () => {
     render(<EditHabitScreen />);
 

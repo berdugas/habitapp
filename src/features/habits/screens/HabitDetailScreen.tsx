@@ -13,6 +13,7 @@ import {
   useHabitDetail,
   useSetHabitActiveStateMutation,
 } from "@/features/habits/hooks";
+import { normalizeHabitReminderTime } from "@/features/habits/time";
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
 import { spacing } from "@/theme/spacing";
@@ -159,12 +160,16 @@ export default function HabitDetailScreen() {
           <Text selectable style={styles.label}>
             Reminder
           </Text>
-          <Text selectable style={styles.value}>
-            {habit.reminder_enabled
-              ? `Enabled${habit.reminder_time ? ` at ${habit.reminder_time}` : ""}`
+            <Text selectable style={styles.value}>
+              {habit.reminder_enabled
+              ? `Enabled${
+                  habit.reminder_time
+                    ? ` at ${normalizeHabitReminderTime(habit.reminder_time)}`
+                    : ""
+                }`
               : "Disabled"}
-          </Text>
-        </View>
+            </Text>
+          </View>
       </View>
 
       <View style={styles.sectionCard}>

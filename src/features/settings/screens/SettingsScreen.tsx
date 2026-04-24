@@ -3,7 +3,10 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 
 import { PrimaryButton } from "@/components/buttons/PrimaryButton";
+import { HabitCard } from "@/components/cards/HabitCard";
+import { EmptyState } from "@/components/feedback/EmptyState";
 import { useAuthSession } from "@/features/auth/hooks";
+import { useInactiveHabitsQuery } from "@/features/habits/hooks";
 import { signOut } from "@/features/auth/api";
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
@@ -11,6 +14,7 @@ import { spacing } from "@/theme/spacing";
 
 export default function SettingsScreen() {
   const { user } = useAuthSession();
+  const inactiveHabitsQuery = useInactiveHabitsQuery();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   async function handleSignOut() {
@@ -42,6 +46,32 @@ export default function SettingsScreen() {
           Reminders, reviews, and AI are intentionally left for later phases.
         </Text>
       </View>
+      <View style={styles.card}>
+        <Text selectable style={styles.title}>
+          Inactive habits
+        </Text>
+        {inactiveHabitsQuery.data?.length ? (
+          <View style={styles.inactiveList}>
+            <Text selectable style={styles.body}>
+              Open any inactive habit to reactivate it from Habit Detail.
+            </Text>
+            {inactiveHabitsQuery.data.map((habit) => (
+              <HabitCard
+                formula={`After ${habit.stack_trigger}, I will ${habit.tiny_action}.`}
+                key={habit.id}
+                metaText="Inactive habit"
+                name={habit.name}
+                onPress={() => router.push(`/(app)/habits/${habit.id}`)}
+              />
+            ))}
+          </View>
+        ) : (
+          <EmptyState
+            body="Deactivated habits will appear here so you can inspect or reactivate them."
+            title="No inactive habits"
+          />
+        )}
+      </View>
       <PrimaryButton
         disabled={isSigningOut}
         label={isSigningOut ? "Signing out..." : "Sign Out"}
@@ -68,6 +98,9 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.xl,
     padding: spacing.xl,
+  },
+  inactiveList: {
+    gap: spacing.lg,
   },
   screen: {
     backgroundColor: colors.background,

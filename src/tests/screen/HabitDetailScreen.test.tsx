@@ -191,6 +191,39 @@ describe("HabitDetailScreen", () => {
     expect(screen.getByText("Disabled")).toBeTruthy();
   });
 
+  it("shows reminder times without database seconds noise", () => {
+    mockUseHabitDetail.mockReturnValue({
+      error: null,
+      formula: "After I brush my teeth, I will Read 1 page.",
+      habit: {
+        id: "habit-1",
+        identity_statement: null,
+        is_active: true,
+        name: "Reading",
+        preferred_time_window: null,
+        reminder_enabled: true,
+        reminder_time: "20:00:00",
+        stack_trigger: "I brush my teeth",
+        start_date: "2026-04-24",
+        tiny_action: "Read 1 page",
+      },
+      isLoading: false,
+      isUpcoming: false,
+      progress: {
+        consistencyRate: 0,
+        skipCount: 0,
+        streak: 0,
+        todayStatus: null,
+      },
+      recentLogs: [],
+    });
+
+    render(<HabitDetailScreen />);
+
+    expect(screen.getByText("Enabled at 20:00")).toBeTruthy();
+    expect(screen.queryByText("Enabled at 20:00:00")).toBeNull();
+  });
+
   it("shows future-start context and empty history for upcoming habits", () => {
     mockUseHabitDetail.mockReturnValue({
       error: null,

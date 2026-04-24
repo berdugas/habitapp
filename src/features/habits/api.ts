@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase/client";
 import { logger } from "@/services/logger";
 import { PHASE_2A_HABIT_LOG_ON_CONFLICT } from "@/features/habits/contract";
+import { normalizeHabitReminderTime } from "@/features/habits/time";
 import { toDeviceDateString } from "@/utils/dates";
 
 import type {
@@ -12,13 +13,15 @@ import type {
 } from "@/features/habits/types";
 
 function mapHabitSetupPayload(payload: HabitSetupPayload) {
+  const normalizedReminderTime = normalizeHabitReminderTime(payload.reminderTime);
+
   return {
     identity_statement: payload.identityStatement.trim() || null,
     name: payload.name.trim(),
     preferred_time_window: payload.preferredTimeWindow.trim() || null,
     reminder_enabled: payload.reminderEnabled,
     reminder_time: payload.reminderEnabled
-      ? payload.reminderTime.trim() || null
+      ? normalizedReminderTime || null
       : null,
     stack_trigger: payload.stackTrigger.trim(),
     tiny_action: payload.tinyAction.trim(),
@@ -64,6 +67,25 @@ export async function getUpcomingActiveHabits(userId: string, todayDate: string)
     logger.error("Failed to fetch upcoming active habits", {
       error,
       todayDate,
+      userId,
+    });
+    throw error;
+  }
+
+  return (data ?? []) as HabitRecord[];
+}
+
+export async function getInactiveHabits(userId: string) {
+  const { data, error } = await supabase
+    .from("habits")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("is_active", false)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    logger.error("Failed to fetch inactive habits", {
+      error,
       userId,
     });
     throw error;

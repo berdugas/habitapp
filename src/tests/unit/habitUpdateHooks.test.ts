@@ -51,6 +51,7 @@ jest.mock("@/services/logger", () => ({
 import {
   getEligibleHabitsQueryKey,
   getHabitDetailQueryKey,
+  getInactiveHabitsQueryKey,
   getUpcomingActiveHabitsQueryKey,
   useSetHabitActiveStateMutation,
   useUpdateHabitMutation,
@@ -128,6 +129,9 @@ describe("habit update hooks", () => {
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
       queryKey: getUpcomingActiveHabitsQueryKey("user-1", "2026-04-24"),
     });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: getInactiveHabitsQueryKey("user-1"),
+    });
 
     const fetchQueryCall = mockFetchQuery.mock.calls[0]?.[0] as {
       queryFn: () => Promise<unknown>;
@@ -192,6 +196,9 @@ describe("habit update hooks", () => {
     });
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
       queryKey: getUpcomingActiveHabitsQueryKey("user-1", "2026-04-24"),
+    });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: getInactiveHabitsQueryKey("user-1"),
     });
   });
 

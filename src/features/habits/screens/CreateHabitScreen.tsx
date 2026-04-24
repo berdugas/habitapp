@@ -4,6 +4,9 @@ import { router } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { PrimaryButton } from "@/components/buttons/PrimaryButton";
+import { SecondaryButton } from "@/components/buttons/SecondaryButton";
+import { HabitCard } from "@/components/cards/HabitCard";
+import { EmptyState } from "@/components/feedback/EmptyState";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { useAuthSession } from "@/features/auth/hooks";
 import { getEligibleHabits } from "@/features/habits/api";
@@ -12,6 +15,7 @@ import { ToggleRow } from "@/components/forms/ToggleRow";
 import {
   getEligibleHabitsQueryKey,
   useCreateHabitMutation,
+  useInactiveHabitsQuery,
 } from "@/features/habits/hooks";
 import { logger } from "@/services/logger";
 import {
@@ -40,6 +44,7 @@ export default function CreateHabitScreen() {
   const { user } = useAuthSession();
   const queryClient = useQueryClient();
   const createHabitMutation = useCreateHabitMutation();
+  const inactiveHabitsQuery = useInactiveHabitsQuery();
 
   const formPayload = {
     identityStatement,
@@ -122,12 +127,38 @@ export default function CreateHabitScreen() {
     >
       <View style={styles.header}>
         <Text selectable style={styles.title}>
-          Create your first habit
+          {inactiveHabitsQuery.data?.length
+            ? "Create a habit"
+            : "Create your first habit"}
         </Text>
         <Text selectable style={styles.body}>
-          Keep it concrete, small, and easy to repeat.
+          {inactiveHabitsQuery.data?.length
+            ? "Keep it concrete, small, and easy to repeat. You can also reopen an inactive habit below."
+            : "Keep it concrete, small, and easy to repeat."}
         </Text>
       </View>
+
+      {inactiveHabitsQuery.data?.length ? (
+        <View style={styles.inactiveSection}>
+          <EmptyState
+            body="Inactive habits stay out of Today until you reactivate them."
+            title="You already have inactive habits"
+          />
+          {inactiveHabitsQuery.data.map((habit) => (
+            <HabitCard
+              formula={`After ${habit.stack_trigger}, I will ${habit.tiny_action}.`}
+              key={habit.id}
+              metaText="Inactive habit"
+              name={habit.name}
+              onPress={() => router.push(`/(app)/habits/${habit.id}`)}
+            />
+          ))}
+          <SecondaryButton
+            label="Open Settings"
+            onPress={() => router.push("/(app)/(tabs)/settings")}
+          />
+        </View>
+      ) : null}
 
       <View style={styles.formCard}>
         {formError ? <ErrorState message={formError} /> : null}
@@ -219,6 +250,9 @@ const styles = StyleSheet.create({
   },
   header: {
     gap: spacing.sm,
+  },
+  inactiveSection: {
+    gap: spacing.lg,
   },
   previewCard: {
     backgroundColor: colors.accentSoft,

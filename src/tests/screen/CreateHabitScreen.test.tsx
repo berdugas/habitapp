@@ -3,13 +3,16 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react-nativ
 import CreateHabitScreen from "@/features/habits/screens/CreateHabitScreen";
 
 const mockReplace = jest.fn();
+const mockPush = jest.fn();
 const mockMutateAsync = jest.fn();
 const mockInvalidateQueries = jest.fn();
 const mockFetchQuery = jest.fn();
 const mockUseAuthSession = jest.fn();
+const mockUseInactiveHabitsQuery = jest.fn();
 
 jest.mock("expo-router", () => ({
   router: {
+    push: (...args: unknown[]) => mockPush(...args),
     replace: (...args: unknown[]) => mockReplace(...args),
   },
 }));
@@ -39,6 +42,7 @@ jest.mock("@/features/habits/hooks", () => ({
       todayDate,
     ],
   ),
+  useInactiveHabitsQuery: () => mockUseInactiveHabitsQuery(),
 }));
 
 jest.mock("@/utils/dates", () => ({
@@ -64,6 +68,9 @@ describe("CreateHabitScreen", () => {
       isBootstrapping: false,
       session: { user: { id: "user-1" } },
       user: { id: "user-1" },
+    });
+    mockUseInactiveHabitsQuery.mockReturnValue({
+      data: [],
     });
     useCreateHabitMutation.mockReturnValue({
       isPending: false,
@@ -239,5 +246,27 @@ describe("CreateHabitScreen", () => {
     render(<CreateHabitScreen />);
 
     expect(screen.getByText("Saving habit...")).toBeTruthy();
+  });
+
+  it("surfaces inactive habits when the user has no active habits left", () => {
+    mockUseInactiveHabitsQuery.mockReturnValue({
+      data: [
+        {
+          id: "habit-9",
+          name: "Reading",
+          stack_trigger: "After breakfast",
+          tiny_action: "Read 1 page",
+        },
+      ],
+    });
+
+    render(<CreateHabitScreen />);
+
+    expect(screen.getByText("You already have inactive habits")).toBeTruthy();
+    expect(screen.getByText("Open Settings")).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText("Reading details"));
+
+    expect(mockPush).toHaveBeenCalledWith("/(app)/habits/habit-9");
   });
 });
