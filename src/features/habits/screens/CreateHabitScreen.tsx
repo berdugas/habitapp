@@ -14,7 +14,10 @@ import {
   useCreateHabitMutation,
 } from "@/features/habits/hooks";
 import { logger } from "@/services/logger";
-import { validateCreateHabitPayload } from "@/features/habits/validators";
+import {
+  normalizeHabitSetupPayload,
+  validateHabitSetupPayload,
+} from "@/features/habits/validators";
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
 import { spacing } from "@/theme/spacing";
@@ -38,7 +41,7 @@ export default function CreateHabitScreen() {
   const queryClient = useQueryClient();
   const createHabitMutation = useCreateHabitMutation();
 
-  const payload = {
+  const formPayload = {
     identityStatement,
     name,
     preferredTimeWindow,
@@ -47,10 +50,11 @@ export default function CreateHabitScreen() {
     stackTrigger,
     tinyAction,
   };
+  const normalizedPayload = normalizeHabitSetupPayload(formPayload);
 
   const validationErrors = useMemo(
-    () => validateCreateHabitPayload(payload),
-    [payload],
+    () => validateHabitSetupPayload(formPayload),
+    [formPayload],
   );
 
   async function handleSave() {
@@ -69,7 +73,7 @@ export default function CreateHabitScreen() {
     let hasSavedHabit = false;
 
     try {
-      await createHabitMutation.mutateAsync(payload);
+      await createHabitMutation.mutateAsync(normalizedPayload);
       hasSavedHabit = true;
       if (!user?.id) {
         throw new Error("We could not refresh your habit list right now.");
@@ -88,14 +92,14 @@ export default function CreateHabitScreen() {
       if (hasSavedHabit) {
         logger.warn("Eligible habits refresh failed after successful create", {
           error,
-          payload,
+          payload: normalizedPayload,
           userId: user?.id ?? null,
         });
         router.replace("/(app)/(tabs)/today");
       } else {
         logger.error("Create habit flow failed", {
           error,
-          payload,
+          payload: normalizedPayload,
           userId: user?.id ?? null,
         });
         setFormError(getCreateHabitErrorMessage());

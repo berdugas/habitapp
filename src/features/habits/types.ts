@@ -4,7 +4,7 @@ export type HabitRecord = Database["public"]["Tables"]["habits"]["Row"];
 export type HabitLogRecord = Database["public"]["Tables"]["habit_logs"]["Row"];
 export type HabitLogStatus = Database["public"]["Enums"]["habit_log_status"];
 
-export type CreateHabitPayload = {
+export type HabitSetupPayload = {
   identityStatement: string;
   name: string;
   preferredTimeWindow: string;
@@ -13,6 +13,8 @@ export type CreateHabitPayload = {
   stackTrigger: string;
   tinyAction: string;
 };
+
+export type CreateHabitPayload = HabitSetupPayload;
 
 export type UpsertHabitLogPayload = {
   habitId: string;

@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useAuthSession } from "@/features/auth/hooks";
 import {
@@ -7,9 +7,12 @@ import {
   getHabitById,
   getHabitLogsForHabitInRange,
   getUpcomingActiveHabits,
+  setHabitActiveState,
+  updateHabit,
 } from "@/features/habits/api";
 import { summarizeHabitProgress } from "@/features/today/progress";
 import { trackEvent } from "@/services/analytics";
+import { logger } from "@/services/logger";
 import {
   getTrailingDateRangeStrings,
   toDeviceDateString,
@@ -18,6 +21,7 @@ import { TODAY_PROGRESS_WINDOW_DAYS } from "@/features/today/constants";
 
 import type {
   CreateHabitPayload,
+  HabitSetupPayload,
   HabitLogRecord,
   HabitRecord,
 } from "@/features/habits/types";
@@ -99,6 +103,19 @@ function normalizeHabitId(habitId: string | string[] | undefined) {
   return habitId;
 }
 
+export function useOwnedHabitQuery(
+  habitIdParam: string | string[] | undefined,
+) {
+  const { user } = useAuthSession();
+  const habitId = normalizeHabitId(habitIdParam);
+
+  return useQuery({
+    enabled: Boolean(user?.id && habitId),
+    queryFn: () => getHabitById(user!.id, habitId!),
+    queryKey: getHabitDetailQueryKey(user?.id, habitId),
+  });
+}
+
 export function useHabitDetail(
   habitIdParam: string | string[] | undefined,
 ): UseHabitDetailResult {
@@ -110,11 +127,7 @@ export function useHabitDetail(
   const endDateObject = new Date(`${endDate}T12:00:00`);
   const routeError = habitId ? null : new Error("Missing habit id.");
 
-  const habitQuery = useQuery({
-    enabled: Boolean(user?.id && habitId),
-    queryFn: () => getHabitById(user!.id, habitId!),
-    queryKey: getHabitDetailQueryKey(user?.id, habitId),
-  });
+  const habitQuery = useOwnedHabitQuery(habitId);
   const habitLogsQuery = useQuery({
     enabled: Boolean(user?.id && habitId),
     queryFn: () =>
@@ -159,6 +172,102 @@ export function useCreateHabitMutation() {
     },
     onSuccess: () => {
       trackEvent("habit_created");
+    },
+  });
+}
+
+async function invalidateHabitSurfaceQueries(
+  userId: string,
+  habitId: string,
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  const todayDate = toDeviceDateString();
+
+  await queryClient.invalidateQueries({
+    queryKey: getHabitDetailQueryKey(userId, habitId),
+  });
+  await queryClient.fetchQuery({
+    queryFn: () => getHabitById(userId, habitId),
+    queryKey: getHabitDetailQueryKey(userId, habitId),
+  });
+  await queryClient.invalidateQueries({
+    queryKey: getEligibleHabitsQueryKey(userId, todayDate),
+  });
+  await queryClient.invalidateQueries({
+    queryKey: getUpcomingActiveHabitsQueryKey(userId, todayDate),
+  });
+}
+
+type UpdateHabitMutationVariables = {
+  habitId: string;
+  payload: HabitSetupPayload;
+};
+
+export function useUpdateHabitMutation() {
+  const { user } = useAuthSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ habitId, payload }: UpdateHabitMutationVariables) => {
+      if (!user?.id) {
+        throw new Error("You need an account session before updating a habit.");
+      }
+
+      return updateHabit(user.id, habitId, payload);
+    },
+    onSuccess: async (_updatedHabit, variables) => {
+      if (!user?.id) {
+        return;
+      }
+
+      await invalidateHabitSurfaceQueries(user.id, variables.habitId, queryClient);
+    },
+    onError: (error, variables) => {
+      logger.error("Habit update mutation failed", {
+        error,
+        habitId: variables.habitId,
+        userId: user?.id ?? null,
+      });
+    },
+  });
+}
+
+type SetHabitActiveStateVariables = {
+  habitId: string;
+  isActive: boolean;
+};
+
+export function useSetHabitActiveStateMutation() {
+  const { user } = useAuthSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      habitId,
+      isActive,
+    }: SetHabitActiveStateVariables) => {
+      if (!user?.id) {
+        throw new Error(
+          "You need an account session before updating a habit state.",
+        );
+      }
+
+      return setHabitActiveState(user.id, habitId, isActive);
+    },
+    onSuccess: async (_updatedHabit, variables) => {
+      if (!user?.id) {
+        return;
+      }
+
+      await invalidateHabitSurfaceQueries(user.id, variables.habitId, queryClient);
+    },
+    onError: (error, variables) => {
+      logger.error("Habit active-state mutation failed", {
+        error,
+        habitId: variables.habitId,
+        isActive: variables.isActive,
+        userId: user?.id ?? null,
+      });
     },
   });
 }

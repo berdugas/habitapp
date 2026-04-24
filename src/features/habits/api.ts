@@ -5,12 +5,13 @@ import { toDeviceDateString } from "@/utils/dates";
 
 import type {
   CreateHabitPayload,
+  HabitSetupPayload,
   HabitLogRecord,
   HabitRecord,
   UpsertHabitLogPayload,
 } from "@/features/habits/types";
 
-function mapCreateHabitPayload(userId: string, payload: CreateHabitPayload) {
+function mapHabitSetupPayload(payload: HabitSetupPayload) {
   return {
     identity_statement: payload.identityStatement.trim() || null,
     name: payload.name.trim(),
@@ -19,9 +20,15 @@ function mapCreateHabitPayload(userId: string, payload: CreateHabitPayload) {
     reminder_time: payload.reminderEnabled
       ? payload.reminderTime.trim() || null
       : null,
-    start_date: toDeviceDateString(),
     stack_trigger: payload.stackTrigger.trim(),
     tiny_action: payload.tinyAction.trim(),
+  };
+}
+
+function mapCreateHabitPayload(userId: string, payload: CreateHabitPayload) {
+  return {
+    ...mapHabitSetupPayload(payload),
+    start_date: toDeviceDateString(),
     user_id: userId,
   };
 }
@@ -74,6 +81,59 @@ export async function createHabit(userId: string, payload: CreateHabitPayload) {
 
   if (error) {
     logger.error("Failed to create habit", { error });
+    throw error;
+  }
+
+  return data as HabitRecord;
+}
+
+export async function updateHabit(
+  userId: string,
+  habitId: string,
+  payload: HabitSetupPayload,
+) {
+  const { data, error } = await supabase
+    .from("habits")
+    .update(mapHabitSetupPayload(payload))
+    .eq("id", habitId)
+    .eq("user_id", userId)
+    .select("*")
+    .single();
+
+  if (error) {
+    logger.error("Failed to update habit", {
+      error,
+      habitId,
+      userId,
+    });
+    throw error;
+  }
+
+  return data as HabitRecord;
+}
+
+export async function setHabitActiveState(
+  userId: string,
+  habitId: string,
+  isActive: boolean,
+) {
+  const { data, error } = await supabase
+    .from("habits")
+    .update({
+      is_active: isActive,
+    })
+    .eq("id", habitId)
+    .eq("user_id", userId)
+    .select("*")
+    .single();
+
+  if (error) {
+    logger.error("Failed to update habit active state", {
+      error,
+      habitId,
+      isActive,
+      userId,
+    });
     throw error;
   }
 

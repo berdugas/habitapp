@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 
@@ -8,11 +9,17 @@ import { LoadingState } from "@/components/feedback/LoadingState";
 import {
   PHASE_2A_HABIT_LOG_STATUS_LABELS,
 } from "@/features/habits/contract";
-import { useHabitDetail } from "@/features/habits/hooks";
+import {
+  useHabitDetail,
+  useSetHabitActiveStateMutation,
+} from "@/features/habits/hooks";
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
 import { spacing } from "@/theme/spacing";
-import { getLoadHabitDetailErrorMessage } from "@/utils/userFacingErrors";
+import {
+  getLoadHabitDetailErrorMessage,
+  getUpdateHabitActiveStateErrorMessage,
+} from "@/utils/userFacingErrors";
 
 import type { HabitLogStatus } from "@/features/habits/types";
 
@@ -41,8 +48,31 @@ function formatDateLabel(dateString: string) {
 
 export default function HabitDetailScreen() {
   const { habitId } = useLocalSearchParams<{ habitId?: string | string[] }>();
+  const activeStateSubmitLockRef = useRef(false);
   const { error, formula, habit, isLoading, isUpcoming, progress, recentLogs } =
     useHabitDetail(habitId);
+  const setHabitActiveStateMutation = useSetHabitActiveStateMutation();
+
+  async function handleActiveStatePress(nextIsActive: boolean) {
+    if (
+      !habit ||
+      activeStateSubmitLockRef.current ||
+      setHabitActiveStateMutation.isPending
+    ) {
+      return;
+    }
+
+    activeStateSubmitLockRef.current = true;
+
+    try {
+      await setHabitActiveStateMutation.mutateAsync({
+        habitId: habit.id,
+        isActive: nextIsActive,
+      });
+    } finally {
+      activeStateSubmitLockRef.current = false;
+    }
+  }
 
   if (isLoading) {
     return <LoadingState message="Loading habit details..." />;
@@ -205,6 +235,24 @@ export default function HabitDetailScreen() {
       </View>
 
       <View style={styles.actions}>
+        {setHabitActiveStateMutation.error ? (
+          <ErrorState message={getUpdateHabitActiveStateErrorMessage()} />
+        ) : null}
+        <View style={styles.actionHelperCard}>
+          <Text selectable style={styles.actionHelperTitle}>
+            {habit.is_active ? "Deactivate habit" : "Reactivate habit"}
+          </Text>
+          <Text selectable style={styles.actionHelperBody}>
+            {habit.is_active
+              ? "This removes the habit from Today, but keeps its history."
+              : "This returns the habit to Today if it has already started."}
+          </Text>
+        </View>
+        <SecondaryButton
+          disabled={setHabitActiveStateMutation.isPending}
+          label={habit.is_active ? "Deactivate habit" : "Reactivate habit"}
+          onPress={() => void handleActiveStatePress(!habit.is_active)}
+        />
         <SecondaryButton
           label="Edit habit"
           onPress={() => router.push(`/(app)/habits/${habit.id}/edit`)}
@@ -219,6 +267,24 @@ export default function HabitDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  actionHelperBody: {
+    color: colors.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  actionHelperCard: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: spacing.xs,
+    padding: spacing.lg,
+  },
+  actionHelperTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "700",
+  },
   actions: {
     gap: spacing.md,
   },

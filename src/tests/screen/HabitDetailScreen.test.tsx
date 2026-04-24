@@ -4,6 +4,8 @@ import HabitDetailScreen from "@/features/habits/screens/HabitDetailScreen";
 
 const mockPush = jest.fn();
 const mockUseHabitDetail = jest.fn();
+const mockUseSetHabitActiveStateMutation = jest.fn();
+const mockMutateAsync = jest.fn();
 const mockUseLocalSearchParams = jest.fn();
 
 jest.mock("expo-router", () => ({
@@ -16,6 +18,7 @@ jest.mock("expo-router", () => ({
 jest.mock("@/features/habits/hooks", () => ({
   useHabitDetail: (habitId: string | string[] | undefined) =>
     mockUseHabitDetail(habitId),
+  useSetHabitActiveStateMutation: () => mockUseSetHabitActiveStateMutation(),
 }));
 
 describe("HabitDetailScreen", () => {
@@ -23,6 +26,11 @@ describe("HabitDetailScreen", () => {
     jest.clearAllMocks();
     mockUseLocalSearchParams.mockReturnValue({
       habitId: "habit-1",
+    });
+    mockUseSetHabitActiveStateMutation.mockReturnValue({
+      error: null,
+      isPending: false,
+      mutateAsync: mockMutateAsync,
     });
   });
 
@@ -81,6 +89,7 @@ describe("HabitDetailScreen", () => {
       habit: {
         id: "habit-1",
         identity_statement: "Become a reader",
+        is_active: true,
         name: "Reading",
         preferred_time_window: "Evening",
         reminder_enabled: true,
@@ -136,6 +145,12 @@ describe("HabitDetailScreen", () => {
     expect(screen.getByText("67%")).toBeTruthy();
     expect(screen.getByText("2 days")).toBeTruthy();
     expect(screen.getByText("Felt easy today")).toBeTruthy();
+    expect(
+      screen.getByText("This removes the habit from Today, but keeps its history."),
+    ).toBeTruthy();
+    expect(screen.queryByText("Delete habit")).toBeNull();
+    expect(screen.queryByText("Archive habit")).toBeNull();
+    expect(screen.queryByText("Pause habit")).toBeNull();
 
     fireEvent.press(screen.getByText("Edit habit"));
 
@@ -149,6 +164,7 @@ describe("HabitDetailScreen", () => {
       habit: {
         id: "habit-2",
         identity_statement: null,
+        is_active: true,
         name: "Meditation",
         preferred_time_window: null,
         reminder_enabled: false,
@@ -182,6 +198,7 @@ describe("HabitDetailScreen", () => {
       habit: {
         id: "habit-3",
         identity_statement: null,
+        is_active: true,
         name: "Stretching",
         preferred_time_window: null,
         reminder_enabled: false,
@@ -210,5 +227,116 @@ describe("HabitDetailScreen", () => {
       ),
     ).toBeTruthy();
     expect(screen.getByText("No recent history yet")).toBeTruthy();
+  });
+
+  it("shows deactivate for active habits and updates the active state in place", () => {
+    mockUseHabitDetail.mockReturnValue({
+      error: null,
+      formula: "After breakfast, I will Read 1 page.",
+      habit: {
+        id: "habit-1",
+        identity_statement: null,
+        is_active: true,
+        name: "Reading",
+        preferred_time_window: null,
+        reminder_enabled: false,
+        reminder_time: null,
+        stack_trigger: "breakfast",
+        start_date: "2026-04-24",
+        tiny_action: "Read 1 page",
+      },
+      isLoading: false,
+      isUpcoming: false,
+      progress: {
+        consistencyRate: 0,
+        skipCount: 0,
+        streak: 0,
+        todayStatus: null,
+      },
+      recentLogs: [],
+    });
+
+    render(<HabitDetailScreen />);
+
+    fireEvent.press(screen.getAllByText("Deactivate habit")[1]);
+
+    expect(mockMutateAsync).toHaveBeenCalledWith({
+      habitId: "habit-1",
+      isActive: false,
+    });
+  });
+
+  it("shows reactivate for inactive habits", () => {
+    mockUseHabitDetail.mockReturnValue({
+      error: null,
+      formula: "After breakfast, I will Read 1 page.",
+      habit: {
+        id: "habit-1",
+        identity_statement: null,
+        is_active: false,
+        name: "Reading",
+        preferred_time_window: null,
+        reminder_enabled: false,
+        reminder_time: null,
+        stack_trigger: "breakfast",
+        start_date: "2026-04-24",
+        tiny_action: "Read 1 page",
+      },
+      isLoading: false,
+      isUpcoming: false,
+      progress: {
+        consistencyRate: 0,
+        skipCount: 0,
+        streak: 0,
+        todayStatus: null,
+      },
+      recentLogs: [],
+    });
+
+    render(<HabitDetailScreen />);
+
+    expect(screen.getAllByText("Reactivate habit")).toHaveLength(2);
+    expect(
+      screen.getByText("This returns the habit to Today if it has already started."),
+    ).toBeTruthy();
+  });
+
+  it("shows a friendly active-state error instead of the raw mutation message", () => {
+    mockUseSetHabitActiveStateMutation.mockReturnValue({
+      error: new Error("database exploded"),
+      isPending: false,
+      mutateAsync: mockMutateAsync,
+    });
+    mockUseHabitDetail.mockReturnValue({
+      error: null,
+      formula: "After breakfast, I will Read 1 page.",
+      habit: {
+        id: "habit-1",
+        identity_statement: null,
+        is_active: true,
+        name: "Reading",
+        preferred_time_window: null,
+        reminder_enabled: false,
+        reminder_time: null,
+        stack_trigger: "breakfast",
+        start_date: "2026-04-24",
+        tiny_action: "Read 1 page",
+      },
+      isLoading: false,
+      isUpcoming: false,
+      progress: {
+        consistencyRate: 0,
+        skipCount: 0,
+        streak: 0,
+        todayStatus: null,
+      },
+      recentLogs: [],
+    });
+
+    render(<HabitDetailScreen />);
+
+    expect(
+      screen.getByText("We couldn't update this habit right now. Try again."),
+    ).toBeTruthy();
   });
 });

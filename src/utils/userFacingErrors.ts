@@ -77,3 +77,11 @@ export function getLoadHabitDetailErrorMessage() {
 export function getSaveTodayStatusErrorMessage() {
   return "We couldn't save today's status right now. Try again.";
 }
+
+export function getUpdateHabitErrorMessage() {
+  return "We couldn't save your changes right now. Try again.";
+}
+
+export function getUpdateHabitActiveStateErrorMessage() {
+  return "We couldn't update this habit right now. Try again.";
+}
