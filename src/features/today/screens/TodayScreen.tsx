@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 
+import { PrimaryButton } from "@/components/buttons/PrimaryButton";
 import { SecondaryButton } from "@/components/buttons/SecondaryButton";
 import { HabitCard } from "@/components/cards/HabitCard";
 import { EmptyState } from "@/components/feedback/EmptyState";
@@ -105,10 +106,16 @@ export default function TodayScreen() {
       ) : null}
 
       {habits.length === 0 && upcomingHabits.length === 0 ? (
-        <EmptyState
-          body="Create your first active habit and it will show up here right away."
-          title="No active habits yet"
-        />
+        <View style={styles.emptySection}>
+          <EmptyState
+            body="Create your first active habit and it will show up here right away."
+            title="No active habits yet"
+          />
+          <PrimaryButton
+            label="Create your first habit"
+            onPress={() => router.push("/(app)/habits/create")}
+          />
+        </View>
       ) : habits.length === 0 ? (
         <View style={styles.upcomingSection}>
           <EmptyState
@@ -211,6 +218,9 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.xl,
     padding: spacing.xl,
+  },
+  emptySection: {
+    gap: spacing.lg,
   },
   header: {
     gap: spacing.sm,

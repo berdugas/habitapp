@@ -2,9 +2,11 @@ import { fireEvent, render, screen } from "@testing-library/react-native";
 
 import TodayScreen from "@/features/today/screens/TodayScreen";
 
+const mockPush = jest.fn();
+
 jest.mock("expo-router", () => ({
   router: {
-    push: jest.fn(),
+    push: (...args: unknown[]) => mockPush(...args),
   },
 }));
 
@@ -180,6 +182,12 @@ describe("TodayScreen", () => {
     render(<TodayScreen />);
 
     expect(screen.getByText("Today not logged yet")).toBeTruthy();
+    expect(screen.getByText("0")).toBeTruthy();
+    expect(screen.getByText("0%")).toBeTruthy();
+    expect(screen.getByText("0 days")).toBeTruthy();
+    expect(screen.getByText("Done")).toBeTruthy();
+    expect(screen.getByText("Skipped")).toBeTruthy();
+    expect(screen.getByText("Missed")).toBeTruthy();
   });
 
   it.each([
@@ -357,6 +365,22 @@ describe("TodayScreen", () => {
         "Create your first active habit and it will show up here right away.",
       ),
     ).toBeTruthy();
+    expect(screen.getByText("Create your first habit")).toBeTruthy();
+  });
+
+  it("routes to Create Habit from the direct Today empty state CTA", () => {
+    useTodayHabits.mockReturnValue({
+      error: null,
+      habits: [],
+      isLoading: false,
+      upcomingHabits: [],
+    });
+
+    render(<TodayScreen />);
+
+    fireEvent.press(screen.getByText("Create your first habit"));
+
+    expect(mockPush).toHaveBeenCalledWith("/(app)/habits/create");
   });
 
   it("shows the upcoming state when active habits are scheduled for later", () => {

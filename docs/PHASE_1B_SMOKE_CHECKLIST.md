@@ -16,9 +16,25 @@ Use this checklist before moving beyond the current Phase 1B slice.
 - While signed in with zero active habits, land on root.
   Expected: App routes to Create Habit.
 - Create a habit with valid values.
-  Expected: Habit saves once, active habits refetch, and the app routes to Today.
+  Expected: Habit saves once, eligible habits refetch, and the app routes to Today.
 - Reopen the app after the habit is created.
-  Expected: Root routes to Today and the same active habit is visible.
+  Expected: Root routes to Today and the same eligible habit is visible.
+
+## First-time journey
+- Sign in with a fresh account that has no habits.
+  Expected: Root routes to Create Habit and does not flash Today first.
+- Create the first habit with valid required values.
+  Expected: The app routes to Today and the new habit appears immediately.
+- On Today after first create, inspect the new habit card before logging.
+  Expected: The card shows the habit name, formula, `Today not logged yet`, `0` skips, `0%` consistency, `0 days` streak, and Done/Skipped/Missed buttons.
+- Tap `Done` on the first habit.
+  Expected: Today refreshes from persisted data and shows `Today: Done` with updated progress.
+- Repeat the same first-log check with `Skipped` and `Missed` on a fresh same-day state if possible.
+  Expected: Today shows the persisted selected status after refresh and does not create duplicate same-day rows.
+- Sign in with a user whose active habits all start in the future.
+  Expected: Root routes to Today, the app shows `Nothing starts today yet`, upcoming start dates are visible, and no status buttons are shown.
+- Navigate directly to Today with a signed-in user who has no eligible or upcoming habits.
+  Expected: The empty state remains understandable and includes a clear path to create the first habit.
 
 ## Validation and safety
 - Try sign in and sign up with empty fields.
@@ -47,7 +63,7 @@ Use this checklist before moving beyond the current Phase 1B slice.
   Expected: User stays on Create Habit with a simple error message and no duplicate record is created.
 - Simulate or trigger a failed Today status write.
   Expected: User sees a simple error message and the UI does not drift into a false success state.
-- Simulate or trigger a failed active-habits load while signed in.
+- Simulate or trigger a failed eligible or upcoming habits load while signed in.
   Expected: Root shows an error state instead of misrouting to Create Habit.
 
 ## Ownership and backend checks
