@@ -110,6 +110,55 @@ describe("TodayScreen", () => {
     expect(screen.getByText("2 days")).toBeTruthy();
   });
 
+  it("updates the visible progress values when the hook returns refreshed persisted data", () => {
+    useTodayHabits
+      .mockReturnValueOnce({
+        error: null,
+        habits: [
+          {
+            consistencyRate: 0,
+            formula: "After I brush my teeth, I will Read 1 page.",
+            id: "habit-1",
+            name: "Reading",
+            skipCount: 1,
+            streak: 0,
+            todayStatus: "skipped",
+          },
+        ],
+        isLoading: false,
+        upcomingHabits: [],
+      })
+      .mockReturnValueOnce({
+        error: null,
+        habits: [
+          {
+            consistencyRate: 2 / 3,
+            formula: "After I brush my teeth, I will Read 1 page.",
+            id: "habit-1",
+            name: "Reading",
+            skipCount: 0,
+            streak: 2,
+            todayStatus: "done",
+          },
+        ],
+        isLoading: false,
+        upcomingHabits: [],
+      });
+
+    const { rerender } = render(<TodayScreen />);
+
+    expect(screen.getByText("Today: Skipped")).toBeTruthy();
+    expect(screen.getByText("1")).toBeTruthy();
+    expect(screen.getByText("0%")).toBeTruthy();
+    expect(screen.getByText("0 days")).toBeTruthy();
+
+    rerender(<TodayScreen />);
+
+    expect(screen.getByText("Today: Done")).toBeTruthy();
+    expect(screen.getByText("67%")).toBeTruthy();
+    expect(screen.getByText("2 days")).toBeTruthy();
+  });
+
   it("shows that today's habit has not been logged yet when no persisted status exists", () => {
     useTodayHabits.mockReturnValue({
       error: null,

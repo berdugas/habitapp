@@ -15,20 +15,47 @@ export type HabitProgressSummary = {
   todayStatus: HabitLogRecord["status"] | null;
 };
 
+function getLogRecency(log: HabitLogRecord) {
+  const updatedAt = Date.parse(log.updated_at);
+
+  if (!Number.isNaN(updatedAt)) {
+    return updatedAt;
+  }
+
+  const createdAt = Date.parse(log.created_at);
+
+  if (!Number.isNaN(createdAt)) {
+    return createdAt;
+  }
+
+  return 0;
+}
+
 export function summarizeHabitProgress({
   endDate = new Date(),
   logs,
   windowDays,
 }: SummarizeHabitProgressOptions): HabitProgressSummary {
+  const normalizedEndDate = new Date(endDate);
+  normalizedEndDate.setHours(0, 0, 0, 0);
+  const endDateString = toDeviceDateString(normalizedEndDate);
+  const startDateString = toDeviceDateString(
+    addDeviceDays(normalizedEndDate, -(windowDays - 1)),
+  );
   const logsByDate = new Map<string, HabitLogRecord>();
 
   for (const log of logs) {
-    if (!logsByDate.has(log.log_date)) {
+    if (log.log_date < startDateString || log.log_date > endDateString) {
+      continue;
+    }
+
+    const existingLog = logsByDate.get(log.log_date);
+
+    if (!existingLog || getLogRecency(log) >= getLogRecency(existingLog)) {
       logsByDate.set(log.log_date, log);
     }
   }
 
-  const endDateString = toDeviceDateString(endDate);
   const todayStatus = logsByDate.get(endDateString)?.status ?? null;
 
   let doneCount = 0;
@@ -52,7 +79,9 @@ export function summarizeHabitProgress({
   let streak = 0;
 
   for (let offset = 0; offset < windowDays; offset += 1) {
-    const currentDateString = toDeviceDateString(addDeviceDays(endDate, -offset));
+    const currentDateString = toDeviceDateString(
+      addDeviceDays(normalizedEndDate, -offset),
+    );
     const currentLog = logsByDate.get(currentDateString);
 
     if (!currentLog || currentLog.status !== "done") {

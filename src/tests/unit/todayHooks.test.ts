@@ -189,6 +189,98 @@ describe("today hooks", () => {
     });
   });
 
+  it("keeps progress scoped to each habit_id when multiple habits share the same history fetch", () => {
+    mockUseEligibleHabitsQuery.mockReturnValue({
+      data: [
+        {
+          id: "habit-1",
+          name: "Reading",
+          start_date: "2026-04-23",
+          stack_trigger: "I brush my teeth",
+          tiny_action: "Read 1 page",
+        },
+        {
+          id: "habit-2",
+          name: "Meditation",
+          start_date: "2026-04-23",
+          stack_trigger: "I wake up",
+          tiny_action: "Meditate for 1 minute",
+        },
+      ],
+      error: null,
+      isLoading: false,
+    });
+    mockUseQuery.mockReturnValue({
+      data: [
+        {
+          created_at: "2026-04-23T00:00:00.000Z",
+          habit_id: "habit-1",
+          id: "log-1",
+          log_date: "2026-04-23",
+          note: null,
+          status: "skipped",
+          updated_at: "2026-04-23T00:00:00.000Z",
+          user_id: "user-1",
+        },
+        {
+          created_at: "2026-04-22T00:00:00.000Z",
+          habit_id: "habit-1",
+          id: "log-2",
+          log_date: "2026-04-22",
+          note: null,
+          status: "missed",
+          updated_at: "2026-04-22T00:00:00.000Z",
+          user_id: "user-1",
+        },
+        {
+          created_at: "2026-04-23T00:00:00.000Z",
+          habit_id: "habit-2",
+          id: "log-3",
+          log_date: "2026-04-23",
+          note: null,
+          status: "done",
+          updated_at: "2026-04-23T00:00:00.000Z",
+          user_id: "user-1",
+        },
+        {
+          created_at: "2026-04-22T00:00:00.000Z",
+          habit_id: "habit-2",
+          id: "log-4",
+          log_date: "2026-04-22",
+          note: null,
+          status: "done",
+          updated_at: "2026-04-22T00:00:00.000Z",
+          user_id: "user-1",
+        },
+      ],
+      error: null,
+      isLoading: false,
+    });
+
+    const result = useTodayHabits();
+
+    expect(result.habits).toEqual([
+      {
+        consistencyRate: 0,
+        formula: "After I brush my teeth, I will Read 1 page.",
+        id: "habit-1",
+        name: "Reading",
+        skipCount: 1,
+        streak: 0,
+        todayStatus: "skipped",
+      },
+      {
+        consistencyRate: 1,
+        formula: "After I wake up, I will Meditate for 1 minute.",
+        id: "habit-2",
+        name: "Meditation",
+        skipCount: 0,
+        streak: 2,
+        todayStatus: "done",
+      },
+    ]);
+  });
+
   it("returns upcoming habits separately when nothing is eligible yet", () => {
     mockUseEligibleHabitsQuery.mockReturnValue({
       data: [],
