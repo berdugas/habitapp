@@ -133,10 +133,23 @@ export async function upsertHabitLog(
   const habit = await getOwnedHabit(userId, payload.habitId);
 
   if (!habit.is_active) {
+    logger.warn("Rejected habit log for inactive habit", {
+      habitId: payload.habitId,
+      logDate: payload.logDate,
+      status: payload.status,
+      userId,
+    });
     throw new Error("Inactive habits cannot receive new logs.");
   }
 
   if (payload.logDate < habit.start_date) {
+    logger.warn("Rejected habit log before habit start_date", {
+      habitId: payload.habitId,
+      logDate: payload.logDate,
+      startDate: habit.start_date,
+      status: payload.status,
+      userId,
+    });
     throw new Error("Habits cannot be logged before their start date.");
   }
 

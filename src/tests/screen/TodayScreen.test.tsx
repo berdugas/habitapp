@@ -190,6 +190,40 @@ describe("TodayScreen", () => {
     });
   });
 
+  it.each([
+    ["Done", "done"],
+    ["Missed", "missed"],
+  ] as const)(
+    "writes %s for the selected habit",
+    (label, status) => {
+      useTodayHabits.mockReturnValue({
+        error: null,
+        habits: [
+          {
+            consistencyRate: 0,
+            formula: "After I brush my teeth, I will Read 1 page.",
+            id: "habit-1",
+            name: "Reading",
+            skipCount: 0,
+            streak: 0,
+            todayStatus: null,
+          },
+        ],
+        isLoading: false,
+        upcomingHabits: [],
+      });
+
+      render(<TodayScreen />);
+
+      fireEvent.press(screen.getByText(label));
+
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        habitId: "habit-1",
+        status,
+      });
+    },
+  );
+
   it("shows a friendly save error instead of the raw mutation message", () => {
     useUpsertTodayHabitStatusMutation.mockReturnValue({
       error: new Error("database exploded"),

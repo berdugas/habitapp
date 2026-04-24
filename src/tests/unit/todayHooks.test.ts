@@ -10,6 +10,7 @@ const mockUpsertHabitLog = jest.fn();
 const mockToDeviceDateString = jest.fn();
 const mockGetTrailingDateRangeStrings = jest.fn();
 const mockAddDeviceDays = jest.fn();
+const mockLoggerError = jest.fn();
 
 jest.mock("@tanstack/react-query", () => ({
   useMutation: (options: unknown) => mockUseMutation(options),
@@ -44,6 +45,12 @@ jest.mock("@/utils/dates", () => ({
   getTrailingDateRangeStrings: (windowDays: number, endDate?: Date) =>
     mockGetTrailingDateRangeStrings(windowDays, endDate),
   toDeviceDateString: (date?: Date) => mockToDeviceDateString(date),
+}));
+
+jest.mock("@/services/logger", () => ({
+  logger: {
+    error: (...args: unknown[]) => mockLoggerError(...args),
+  },
 }));
 
 import {
@@ -215,6 +222,71 @@ describe("today hooks", () => {
     ]);
   });
 
+  it("uses the shared device-local day and selected done status when logging today", async () => {
+    useUpsertTodayHabitStatusMutation();
+
+    const mutationOptions = mockUseMutation.mock.calls[0]?.[0] as {
+      mutationFn: (variables: { habitId: string; status: string }) => Promise<unknown>;
+    };
+
+    await mutationOptions.mutationFn({
+      habitId: "habit-1",
+      status: "done",
+    });
+
+    expect(mockToDeviceDateString).toHaveBeenCalled();
+    expect(mockUpsertHabitLog).toHaveBeenCalledWith("user-1", {
+      habitId: "habit-1",
+      logDate: "2026-04-23",
+      status: "done",
+    });
+  });
+
+  it.each([
+    ["skipped"],
+    ["missed"],
+  ] as const)("passes the selected %s status through unchanged", async (status) => {
+    useUpsertTodayHabitStatusMutation();
+
+    const mutationOptions = mockUseMutation.mock.calls[0]?.[0] as {
+      mutationFn: (variables: { habitId: string; status: string }) => Promise<unknown>;
+    };
+
+    await mutationOptions.mutationFn({
+      habitId: "habit-1",
+      status,
+    });
+
+    expect(mockUpsertHabitLog).toHaveBeenCalledWith("user-1", {
+      habitId: "habit-1",
+      logDate: "2026-04-23",
+      status,
+    });
+  });
+
+  it("rejects unauthenticated logging attempts before calling the API", async () => {
+    mockUseAuthSession.mockReturnValue({
+      isBootstrapping: false,
+      session: null,
+      user: null,
+    });
+
+    useUpsertTodayHabitStatusMutation();
+
+    const mutationOptions = mockUseMutation.mock.calls[0]?.[0] as {
+      mutationFn: (variables: { habitId: string; status: string }) => Promise<unknown>;
+    };
+
+    await expect(
+      mutationOptions.mutationFn({
+        habitId: "habit-1",
+        status: "done",
+      }),
+    ).rejects.toThrow("You need an account session before logging a habit.");
+
+    expect(mockUpsertHabitLog).not.toHaveBeenCalled();
+  });
+
   it("invalidates and explicitly refetches today's log query after a successful mutation", async () => {
     useUpsertTodayHabitStatusMutation();
 
@@ -253,6 +325,32 @@ describe("today hooks", () => {
       "user-1",
       "2026-03-25",
       "2026-04-23",
+    );
+  });
+
+  it("logs mutation failures with habit, status, and user context", () => {
+    useUpsertTodayHabitStatusMutation();
+
+    const mutationOptions = mockUseMutation.mock.calls[0]?.[0] as {
+      onError: (error: Error, variables: { habitId: string; status: string }) => void;
+    };
+    const lookupError = new Error(
+      "JSON object requested, multiple (or no) rows returned",
+    );
+
+    mutationOptions.onError(lookupError, {
+      habitId: "habit-404",
+      status: "missed",
+    });
+
+    expect(mockLoggerError).toHaveBeenCalledWith(
+      "Today status mutation failed",
+      {
+        error: lookupError,
+        habitId: "habit-404",
+        status: "missed",
+        userId: "user-1",
+      },
     );
   });
 });
