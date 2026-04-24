@@ -73,6 +73,47 @@ describe("habit api", () => {
     });
   });
 
+  it("trims and persists reminder time when reminders are enabled", async () => {
+    mockInsert.mockReturnValue({
+      select: mockInsertSelect,
+    });
+    mockInsertSelect.mockReturnValue({
+      single: mockInsertSingle,
+    });
+    mockInsertSingle.mockResolvedValue({
+      data: {
+        id: "habit-2",
+        start_date: "2026-04-23",
+      },
+      error: null,
+    });
+    mockFrom.mockReturnValue({
+      insert: mockInsert,
+    });
+
+    await createHabit("user-1", {
+      identityStatement: " Become a reader ",
+      name: " Reading ",
+      preferredTimeWindow: " Evening ",
+      reminderEnabled: true,
+      reminderTime: " 20:00 ",
+      stackTrigger: " After dinner ",
+      tinyAction: " Read 1 page ",
+    });
+
+    expect(mockInsert).toHaveBeenCalledWith({
+      identity_statement: "Become a reader",
+      name: "Reading",
+      preferred_time_window: "Evening",
+      reminder_enabled: true,
+      reminder_time: "20:00",
+      stack_trigger: "After dinner",
+      start_date: "2026-04-23",
+      tiny_action: "Read 1 page",
+      user_id: "user-1",
+    });
+  });
+
   it("filters eligible habits by active and started", async () => {
     const result = {
       data: [{ id: "habit-1", start_date: "2026-04-23" }],

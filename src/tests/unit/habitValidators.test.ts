@@ -52,4 +52,34 @@ describe("validateCreateHabitPayload", () => {
       reminderTime: "Use a valid 24-hour time like 20:00.",
     });
   });
+
+  it("allows optional fields to be blank", () => {
+    expect(
+      validateCreateHabitPayload({
+        identityStatement: "",
+        name: "Reading",
+        preferredTimeWindow: "",
+        reminderEnabled: false,
+        reminderTime: "",
+        stackTrigger: "After breakfast",
+        tinyAction: "Read 1 page",
+      }),
+    ).toEqual({});
+  });
+
+  it("requires reminder time when reminders are enabled even before format validation", () => {
+    expect(
+      validateCreateHabitPayload({
+        identityStatement: "",
+        name: "Reading",
+        preferredTimeWindow: "",
+        reminderEnabled: true,
+        reminderTime: "   ",
+        stackTrigger: "After breakfast",
+        tinyAction: "Read 1 page",
+      }),
+    ).toEqual({
+      reminderTime: "Pick a reminder time or turn reminders off.",
+    });
+  });
 });

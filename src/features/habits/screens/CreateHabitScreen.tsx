@@ -21,7 +21,6 @@ import { spacing } from "@/theme/spacing";
 import { toDeviceDateString } from "@/utils/dates";
 import {
   getCreateHabitErrorMessage,
-  getRefreshHabitsErrorMessage,
 } from "@/utils/userFacingErrors";
 
 export default function CreateHabitScreen() {
@@ -86,15 +85,19 @@ export default function CreateHabitScreen() {
       });
       router.replace("/(app)/(tabs)/today");
     } catch (error) {
-      logger.error("Create habit flow failed", {
-        error,
-        payload,
-        userId: user?.id ?? null,
-      });
-
       if (hasSavedHabit) {
-        setFormError(getRefreshHabitsErrorMessage());
+        logger.warn("Eligible habits refresh failed after successful create", {
+          error,
+          payload,
+          userId: user?.id ?? null,
+        });
+        router.replace("/(app)/(tabs)/today");
       } else {
+        logger.error("Create habit flow failed", {
+          error,
+          payload,
+          userId: user?.id ?? null,
+        });
         setFormError(getCreateHabitErrorMessage());
       }
     } finally {

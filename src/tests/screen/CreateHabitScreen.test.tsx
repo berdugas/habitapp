@@ -54,10 +54,12 @@ const { getEligibleHabitsQueryKey, useCreateHabitMutation } = jest.requireMock(
 
 describe("CreateHabitScreen", () => {
   let consoleErrorSpy: jest.SpyInstance;
+  let consoleWarnSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
     consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     mockUseAuthSession.mockReturnValue({
       isBootstrapping: false,
       session: { user: { id: "user-1" } },
@@ -80,6 +82,7 @@ describe("CreateHabitScreen", () => {
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
   });
 
   it("submits the first habit, refetches eligible habits, and then routes to today", async () => {
@@ -132,7 +135,7 @@ describe("CreateHabitScreen", () => {
     );
   });
 
-  it("stays on the create screen when the eligible habits refetch fails", async () => {
+  it("routes to Today when the habit is saved but the eligible habits refetch fails", async () => {
     mockFetchQuery.mockRejectedValueOnce(new Error("Could not refresh habits."));
 
     render(<CreateHabitScreen />);
@@ -150,14 +153,10 @@ describe("CreateHabitScreen", () => {
     fireEvent.press(screen.getByText("Save Habit"));
 
     await waitFor(() => {
-      expect(
-        screen.getByText(
-          "We saved your habit, but we couldn't refresh Today right now. Try again.",
-        ),
-      ).toBeTruthy();
+      expect(mockReplace).toHaveBeenCalledWith("/(app)/(tabs)/today");
     });
-
-    expect(mockReplace).not.toHaveBeenCalled();
+    expect(consoleWarnSpy).toHaveBeenCalled();
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 
   it("prevents a second save while the first one is still in flight", async () => {
@@ -193,5 +192,52 @@ describe("CreateHabitScreen", () => {
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalledWith("/(app)/(tabs)/today");
     });
+  });
+
+  it("preserves entered values when the create mutation fails", async () => {
+    mockMutateAsync.mockRejectedValueOnce(new Error("create failed"));
+
+    render(<CreateHabitScreen />);
+
+    fireEvent.changeText(screen.getByPlaceholderText("Reading"), "Reading");
+    fireEvent.changeText(
+      screen.getByPlaceholderText("Become someone who reads daily"),
+      "Become a reader",
+    );
+    fireEvent.changeText(
+      screen.getByPlaceholderText("After I brush my teeth"),
+      "After breakfast",
+    );
+    fireEvent.changeText(
+      screen.getByPlaceholderText("Read 1 page"),
+      "Read 1 page",
+    );
+    fireEvent.changeText(screen.getByPlaceholderText("Evening"), "Evening");
+
+    fireEvent.press(screen.getByText("Save Habit"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("We couldn't save your habit right now. Try again."),
+      ).toBeTruthy();
+    });
+
+    expect(screen.getByDisplayValue("Reading")).toBeTruthy();
+    expect(screen.getByDisplayValue("Become a reader")).toBeTruthy();
+    expect(screen.getByDisplayValue("After breakfast")).toBeTruthy();
+    expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
+    expect(screen.getByDisplayValue("Evening")).toBeTruthy();
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it("shows the pending label while the create mutation is in flight", () => {
+    useCreateHabitMutation.mockReturnValue({
+      isPending: true,
+      mutateAsync: mockMutateAsync,
+    });
+
+    render(<CreateHabitScreen />);
+
+    expect(screen.getByText("Saving habit...")).toBeTruthy();
   });
 });
