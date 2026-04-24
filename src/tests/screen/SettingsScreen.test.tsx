@@ -36,10 +36,40 @@ describe("SettingsScreen", () => {
     });
     mockUseInactiveHabitsQuery.mockReturnValue({
       data: [],
+      error: null,
+      isLoading: false,
     });
   });
 
-  it("shows an empty inactive state when no inactive habits exist", () => {
+  it("shows inactive habits loading state without the empty state", () => {
+    mockUseInactiveHabitsQuery.mockReturnValue({
+      data: undefined,
+      error: null,
+      isLoading: true,
+    });
+
+    render(<SettingsScreen />);
+
+    expect(screen.getByText("Loading inactive habits...")).toBeTruthy();
+    expect(screen.queryByText("No inactive habits")).toBeNull();
+  });
+
+  it("shows inactive habits error state without the empty state", () => {
+    mockUseInactiveHabitsQuery.mockReturnValue({
+      data: undefined,
+      error: new Error("boom"),
+      isLoading: false,
+    });
+
+    render(<SettingsScreen />);
+
+    expect(
+      screen.getByText("We couldn't load inactive habits right now. Try again."),
+    ).toBeTruthy();
+    expect(screen.queryByText("No inactive habits")).toBeNull();
+  });
+
+  it("shows an empty inactive state after a successful empty load", () => {
     render(<SettingsScreen />);
 
     expect(screen.getByText("Inactive habits")).toBeTruthy();
@@ -56,6 +86,8 @@ describe("SettingsScreen", () => {
           tiny_action: "Read 1 page",
         },
       ],
+      error: null,
+      isLoading: false,
     });
 
     render(<SettingsScreen />);

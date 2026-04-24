@@ -5,12 +5,15 @@ import { router } from "expo-router";
 import { PrimaryButton } from "@/components/buttons/PrimaryButton";
 import { HabitCard } from "@/components/cards/HabitCard";
 import { EmptyState } from "@/components/feedback/EmptyState";
+import { ErrorState } from "@/components/feedback/ErrorState";
+import { LoadingState } from "@/components/feedback/LoadingState";
 import { useAuthSession } from "@/features/auth/hooks";
 import { useInactiveHabitsQuery } from "@/features/habits/hooks";
 import { signOut } from "@/features/auth/api";
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
 import { spacing } from "@/theme/spacing";
+import { getLoadInactiveHabitsErrorMessage } from "@/utils/userFacingErrors";
 
 export default function SettingsScreen() {
   const { user } = useAuthSession();
@@ -50,7 +53,11 @@ export default function SettingsScreen() {
         <Text selectable style={styles.title}>
           Inactive habits
         </Text>
-        {inactiveHabitsQuery.data?.length ? (
+        {inactiveHabitsQuery.isLoading ? (
+          <LoadingState message="Loading inactive habits..." />
+        ) : inactiveHabitsQuery.error ? (
+          <ErrorState message={getLoadInactiveHabitsErrorMessage()} />
+        ) : inactiveHabitsQuery.data?.length ? (
           <View style={styles.inactiveList}>
             <Text selectable style={styles.body}>
               Open any inactive habit to reactivate it from Habit Detail.

@@ -47,6 +47,22 @@ function formatDateLabel(dateString: string) {
   });
 }
 
+function getUpcomingHabitMessage(isActive: boolean) {
+  if (!isActive) {
+    return "This habit is inactive and scheduled to start later. Reactivate it first; it will become loggable on its start date.";
+  }
+
+  return "This habit is scheduled and will become loggable on its start date.";
+}
+
+function getActiveStateHelperMessage(isActive: boolean) {
+  if (!isActive) {
+    return "This habit is inactive. Reactivate it to return it to Today.";
+  }
+
+  return "This removes the habit from Today, but keeps its history.";
+}
+
 export default function HabitDetailScreen() {
   const { habitId } = useLocalSearchParams<{ habitId?: string | string[] }>();
   const activeStateSubmitLockRef = useRef(false);
@@ -119,7 +135,7 @@ export default function HabitDetailScreen() {
             Starts on {formatDateLabel(habit.start_date)}
           </Text>
           <Text selectable style={styles.infoBody}>
-            This habit is scheduled and will become loggable on its start date.
+            {getUpcomingHabitMessage(habit.is_active)}
           </Text>
         </View>
       ) : null}
@@ -248,9 +264,7 @@ export default function HabitDetailScreen() {
             {habit.is_active ? "Deactivate habit" : "Reactivate habit"}
           </Text>
           <Text selectable style={styles.actionHelperBody}>
-            {habit.is_active
-              ? "This removes the habit from Today, but keeps its history."
-              : "This returns the habit to Today if it has already started."}
+            {getActiveStateHelperMessage(habit.is_active)}
           </Text>
         </View>
         <SecondaryButton

@@ -224,7 +224,7 @@ describe("HabitDetailScreen", () => {
     expect(screen.queryByText("Enabled at 20:00:00")).toBeNull();
   });
 
-  it("shows future-start context and empty history for upcoming habits", () => {
+  it("shows active future-start context and empty history for upcoming habits", () => {
     mockUseHabitDetail.mockReturnValue({
       error: null,
       formula: "After lunch, I will Stretch for 1 minute.",
@@ -330,7 +330,46 @@ describe("HabitDetailScreen", () => {
 
     expect(screen.getAllByText("Reactivate habit")).toHaveLength(2);
     expect(
-      screen.getByText("This returns the habit to Today if it has already started."),
+      screen.getByText("This habit is inactive. Reactivate it to return it to Today."),
+    ).toBeTruthy();
+  });
+
+  it("shows inactive future-start context for upcoming inactive habits", () => {
+    mockUseHabitDetail.mockReturnValue({
+      error: null,
+      formula: "After breakfast, I will Read 1 page.",
+      habit: {
+        id: "habit-1",
+        identity_statement: null,
+        is_active: false,
+        name: "Reading",
+        preferred_time_window: null,
+        reminder_enabled: false,
+        reminder_time: null,
+        stack_trigger: "breakfast",
+        start_date: "2026-04-26",
+        tiny_action: "Read 1 page",
+      },
+      isLoading: false,
+      isUpcoming: true,
+      progress: {
+        consistencyRate: 0,
+        skipCount: 0,
+        streak: 0,
+        todayStatus: null,
+      },
+      recentLogs: [],
+    });
+
+    render(<HabitDetailScreen />);
+
+    expect(
+      screen.getByText(
+        "This habit is inactive and scheduled to start later. Reactivate it first; it will become loggable on its start date.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText("This habit is inactive. Reactivate it to return it to Today."),
     ).toBeTruthy();
   });
 
