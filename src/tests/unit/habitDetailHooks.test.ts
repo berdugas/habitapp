@@ -2,6 +2,7 @@ const mockUseQuery = jest.fn();
 const mockUseAuthSession = jest.fn();
 const mockGetHabitById = jest.fn();
 const mockGetHabitLogsForHabitInRange = jest.fn();
+const mockGetLatestWeeklyReview = jest.fn();
 const mockGetTrailingDateRangeStrings = jest.fn();
 const mockToDeviceDateString = jest.fn();
 const mockAddDeviceDays = jest.fn();
@@ -29,6 +30,11 @@ jest.mock("@/features/habits/api", () => ({
   getUpcomingActiveHabits: jest.fn(),
 }));
 
+jest.mock("@/features/reviews/api", () => ({
+  getLatestWeeklyReview: (userId: string, habitId: string) =>
+    mockGetLatestWeeklyReview(userId, habitId),
+}));
+
 jest.mock("@/utils/dates", () => ({
   addDeviceDays: (date: Date, amount: number) => mockAddDeviceDays(date, amount),
   getTrailingDateRangeStrings: (windowDays: number, endDate?: Date) =>
@@ -41,6 +47,7 @@ import {
   getHabitDetailQueryKey,
   useHabitDetail,
 } from "@/features/habits/hooks";
+import { getLatestWeeklyReviewQueryKey } from "@/features/reviews/queryKeys";
 
 describe("habit detail hooks", () => {
   beforeEach(() => {
@@ -95,6 +102,21 @@ describe("habit detail hooks", () => {
         ],
         error: null,
         isLoading: false,
+      })
+      .mockReturnValueOnce({
+        data: {
+          adjustment_note: "Keep breakfast as the cue",
+          habit_id: "habit-1",
+          id: "review-1",
+          tiny_action_too_hard: false,
+          trigger_worked: true,
+          user_id: "user-1",
+          was_hard: "Remembering on busy days",
+          week_start: "2026-04-20",
+          went_well: "Reading after breakfast",
+        },
+        error: null,
+        isLoading: false,
       });
 
     const result = useHabitDetail("habit-1");
@@ -118,7 +140,15 @@ describe("habit detail hooks", () => {
         ),
       }),
     );
+    expect(mockUseQuery).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({
+        enabled: true,
+        queryKey: getLatestWeeklyReviewQueryKey("user-1", "habit-1"),
+      }),
+    );
     expect(result.formula).toBe("After I brush my teeth, I will Read 1 page.");
+    expect(result.latestReview?.id).toBe("review-1");
     expect(result.progress.todayStatus).toBe("done");
     expect(result.progress.streak).toBe(1);
     expect(result.recentLogs).toHaveLength(1);
@@ -139,6 +169,11 @@ describe("habit detail hooks", () => {
       })
       .mockReturnValueOnce({
         data: [],
+        error: null,
+        isLoading: false,
+      })
+      .mockReturnValueOnce({
+        data: null,
         error: null,
         isLoading: false,
       });
@@ -183,6 +218,11 @@ describe("habit detail hooks", () => {
       })
       .mockReturnValueOnce({
         data: [],
+        error: null,
+        isLoading: false,
+      })
+      .mockReturnValueOnce({
+        data: null,
         error: null,
         isLoading: false,
       });

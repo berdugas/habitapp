@@ -37,6 +37,10 @@ jest.mock("@/features/habits/api", () => ({
   ) => mockUpdateHabit(userId, habitId, payload),
 }));
 
+jest.mock("@/features/reviews/api", () => ({
+  getLatestWeeklyReview: jest.fn(),
+}));
+
 jest.mock("@/utils/dates", () => ({
   getTrailingDateRangeStrings: jest.fn(),
   toDeviceDateString: (date?: Date) => mockToDeviceDateString(date),

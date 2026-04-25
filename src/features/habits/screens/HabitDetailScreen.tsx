@@ -47,6 +47,24 @@ function formatDateLabel(dateString: string) {
   });
 }
 
+function formatWeekLabel(weekStart: string) {
+  return `Week of ${new Date(`${weekStart}T12:00:00`).toLocaleDateString(
+    undefined,
+    {
+      day: "numeric",
+      month: "short",
+    },
+  )}`;
+}
+
+function formatBooleanAnswer(value: boolean | null) {
+  if (value === null) {
+    return "Not answered";
+  }
+
+  return value ? "Yes" : "No";
+}
+
 function getUpcomingHabitMessage(isActive: boolean) {
   if (!isActive) {
     return "This habit is inactive and scheduled to start later. Reactivate it first; it will become loggable on its start date.";
@@ -66,8 +84,16 @@ function getActiveStateHelperMessage(isActive: boolean) {
 export default function HabitDetailScreen() {
   const { habitId } = useLocalSearchParams<{ habitId?: string | string[] }>();
   const activeStateSubmitLockRef = useRef(false);
-  const { error, formula, habit, isLoading, isUpcoming, progress, recentLogs } =
-    useHabitDetail(habitId);
+  const {
+    error,
+    formula,
+    habit,
+    isLoading,
+    isUpcoming,
+    latestReview,
+    progress,
+    recentLogs,
+  } = useHabitDetail(habitId);
   const setHabitActiveStateMutation = useSetHabitActiveStateMutation();
 
   async function handleActiveStatePress(nextIsActive: boolean) {
@@ -255,6 +281,73 @@ export default function HabitDetailScreen() {
         )}
       </View>
 
+      <View style={styles.sectionCard}>
+        <Text selectable style={styles.sectionTitle}>
+          {latestReview ? "Latest weekly review" : "Weekly review"}
+        </Text>
+        {latestReview ? (
+          <View style={styles.reviewContent}>
+            <Text selectable style={styles.reviewWeek}>
+              {formatWeekLabel(latestReview.week_start)}
+            </Text>
+            {latestReview.went_well ? (
+              <View style={styles.row}>
+                <Text selectable style={styles.label}>
+                  What went well
+                </Text>
+                <Text selectable style={styles.value}>
+                  {latestReview.went_well}
+                </Text>
+              </View>
+            ) : null}
+            {latestReview.was_hard ? (
+              <View style={styles.row}>
+                <Text selectable style={styles.label}>
+                  What was hard
+                </Text>
+                <Text selectable style={styles.value}>
+                  {latestReview.was_hard}
+                </Text>
+              </View>
+            ) : null}
+            <View style={styles.row}>
+              <Text selectable style={styles.label}>
+                Trigger worked
+              </Text>
+              <Text selectable style={styles.value}>
+                {formatBooleanAnswer(latestReview.trigger_worked)}
+              </Text>
+            </View>
+            <View style={styles.row}>
+              <Text selectable style={styles.label}>
+                Tiny action too hard
+              </Text>
+              <Text selectable style={styles.value}>
+                {formatBooleanAnswer(latestReview.tiny_action_too_hard)}
+              </Text>
+            </View>
+            {latestReview.adjustment_note ? (
+              <View style={styles.row}>
+                <Text selectable style={styles.label}>
+                  Adjustment
+                </Text>
+                <Text selectable style={styles.value}>
+                  {latestReview.adjustment_note}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        ) : (
+          <Text selectable style={styles.value}>
+            Reflect on what worked and what to adjust for this habit.
+          </Text>
+        )}
+        <SecondaryButton
+          label={latestReview ? "Update weekly review" : "Start weekly review"}
+          onPress={() => router.push(`/(app)/reviews/${habit.id}`)}
+        />
+      </View>
+
       <View style={styles.actions}>
         {setHabitActiveStateMutation.error ? (
           <ErrorState message={getUpdateHabitActiveStateErrorMessage()} />
@@ -383,6 +476,14 @@ const styles = StyleSheet.create({
   },
   row: {
     gap: spacing.xs,
+  },
+  reviewContent: {
+    gap: spacing.md,
+  },
+  reviewWeek: {
+    color: colors.textMuted,
+    fontSize: 14,
+    fontWeight: "600",
   },
   screen: {
     backgroundColor: colors.background,
