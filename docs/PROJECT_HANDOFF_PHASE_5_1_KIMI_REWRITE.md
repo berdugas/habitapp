@@ -65,3 +65,9 @@ The exact client error copy is:
 ```text
 We couldn't generate a rewrite right now. You can still edit this habit manually.
 ```
+
+If the client shows this copy during live smoke, check Supabase Edge Function
+logs for `[generate-habit-rewrite]`. The function logs safe reason codes such
+as `missing_authorization`, `habit_not_found_or_not_owned`,
+`missing_supabase_configuration`, `kimi_generation_failed`, or
+`invalid_kimi_json_shape`.

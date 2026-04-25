@@ -79,7 +79,13 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-function safeError(status = 400) {
+function safeError(status = 400, reason = "unknown", meta?: Record<string, unknown>) {
+  console.error("[generate-habit-rewrite]", {
+    meta: meta ?? {},
+    reason,
+    status,
+  });
+
   return jsonResponse(
     {
       error: "Unable to generate habit rewrite.",
@@ -118,6 +124,31 @@ function validateRequestBody(body: unknown) {
     habitId,
     suggestionType: body.suggestionType as SuggestionType,
   };
+}
+
+function parseModelJsonContent(content: string) {
+  try {
+    return JSON.parse(content);
+  } catch {
+    // Some OpenAI-compatible providers still wrap JSON in markdown despite strict prompts.
+  }
+
+  const fencedMatch = content.trim().match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  if (fencedMatch?.[1]) {
+    try {
+      return JSON.parse(fencedMatch[1]);
+    } catch {
+      // Fall through to the bounded object extraction below.
+    }
+  }
+
+  const firstBrace = content.indexOf("{");
+  const lastBrace = content.lastIndexOf("}");
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    return JSON.parse(content.slice(firstBrace, lastBrace + 1));
+  }
+
+  throw new Error("Model content was not parseable JSON.");
 }
 
 function dateStringFromUtcDate(date: Date) {
@@ -313,6 +344,11 @@ async function callKimi(prompt: string) {
           max_tokens: 220,
           messages: [
             {
+              content:
+                "Return a single JSON object only. Do not wrap the JSON in markdown or code fences.",
+              role: "system",
+            },
+            {
               content: prompt,
               role: "user",
             },
@@ -330,7 +366,7 @@ async function callKimi(prompt: string) {
     );
 
     if (!response.ok) {
-      throw new Error("Kimi request failed.");
+      throw new Error(`Kimi request failed with status ${response.status}.`);
     }
 
     const body = await response.json();
@@ -339,7 +375,7 @@ async function callKimi(prompt: string) {
       throw new Error("Kimi response did not include content.");
     }
 
-    return JSON.parse(content);
+    return parseModelJsonContent(content);
   } finally {
     clearTimeout(timeoutId);
   }
@@ -354,30 +390,30 @@ Deno.serve(async (request) => {
   }
 
   if (request.method !== "POST") {
-    return safeError(405);
+    return safeError(405, "method_not_allowed");
   }
 
   const authorization = request.headers.get("Authorization");
   if (!authorization) {
-    return safeError(401);
+    return safeError(401, "missing_authorization");
   }
 
   let requestBody: unknown;
   try {
     requestBody = await request.json();
   } catch {
-    return safeError();
+    return safeError(400, "invalid_json_body");
   }
 
   const validatedRequest = validateRequestBody(requestBody);
   if (!validatedRequest) {
-    return safeError();
+    return safeError(400, "invalid_request_body");
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
   if (!supabaseUrl || !supabaseAnonKey) {
-    return safeError(500);
+    return safeError(500, "missing_supabase_configuration");
   }
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -394,7 +430,9 @@ Deno.serve(async (request) => {
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    return safeError(401);
+    return safeError(401, "invalid_user_session", {
+      message: userError?.message ?? null,
+    });
   }
 
   const { data: habit, error: habitError } = await supabase
@@ -407,7 +445,9 @@ Deno.serve(async (request) => {
     .maybeSingle();
 
   if (habitError || !habit) {
-    return safeError(404);
+    return safeError(404, "habit_not_found_or_not_owned", {
+      message: habitError?.message ?? null,
+    });
   }
 
   const { data: latestReview, error: latestReviewError } = await supabase
@@ -422,7 +462,9 @@ Deno.serve(async (request) => {
     .maybeSingle();
 
   if (latestReviewError) {
-    return safeError(500);
+    return safeError(500, "latest_review_fetch_failed", {
+      message: latestReviewError.message,
+    });
   }
 
   const today = new Date();
@@ -440,7 +482,9 @@ Deno.serve(async (request) => {
     .order("log_date", { ascending: false });
 
   if (logsError) {
-    return safeError(500);
+    return safeError(500, "habit_logs_fetch_failed", {
+      message: logsError.message,
+    });
   }
 
   const progress = summarizeProgress((logs ?? []) as HabitLogRecord[], today);
@@ -456,11 +500,13 @@ Deno.serve(async (request) => {
     const validatedResponse = validateRewriteResponse(kimiJson);
 
     if (!validatedResponse) {
-      return safeError(502);
+      return safeError(502, "invalid_kimi_json_shape");
     }
 
     return jsonResponse(validatedResponse);
-  } catch {
-    return safeError(502);
+  } catch (error) {
+    return safeError(502, "kimi_generation_failed", {
+      message: error instanceof Error ? error.message : String(error),
+    });
   }
 });
