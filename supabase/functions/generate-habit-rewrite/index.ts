@@ -368,7 +368,13 @@ async function callKimi(prompt: string) {
     );
 
     if (!response.ok) {
-      throw new Error(`Kimi request failed with status ${response.status}.`);
+      const errorBody = await response.text();
+      throw new Error(
+        `Kimi request failed with status ${response.status}: ${errorBody.slice(
+          0,
+          600,
+        )}`,
+      );
     }
 
     const body = await response.json();
