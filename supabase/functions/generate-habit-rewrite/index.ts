@@ -266,6 +266,30 @@ function validateRewriteResponse(value: unknown): GenerateHabitRewriteResponse |
   };
 }
 
+function describeInvalidKimiJson(value: unknown) {
+  if (!isRecord(value)) {
+    return {
+      type: Array.isArray(value) ? "array" : typeof value,
+    };
+  }
+
+  return {
+    keys: Object.keys(value),
+    valuePreview: Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        typeof entry === "string"
+          ? `${entry.slice(0, 80)}${entry.length > 80 ? "..." : ""}`
+          : entry === null
+            ? null
+            : Array.isArray(entry)
+              ? "array"
+              : typeof entry,
+      ]),
+    ),
+  };
+}
+
 function boundContextString(value: string | null) {
   return value ? value.slice(0, CONTEXT_FIELD_MAX_LENGTH) : null;
 }
@@ -291,7 +315,12 @@ function buildPrompt({
     '  "explanation": string',
     "}",
     "",
+    "Example valid output:",
+    '{ "suggestedStackTrigger": "After breakfast", "suggestedTinyAction": "Read one paragraph", "explanation": "This keeps the habit small and tied to a clear daily moment." }',
+    "",
     "Rules:",
+    "- Use exactly the three keys shown above.",
+    "- Do not include any extra keys.",
     "- Do not create a new habit.",
     "- Do not make the habit bigger.",
     "- Keep the tiny action small and realistic.",
@@ -508,7 +537,9 @@ Deno.serve(async (request) => {
     const validatedResponse = validateRewriteResponse(kimiJson);
 
     if (!validatedResponse) {
-      return safeError(502, "invalid_kimi_json_shape");
+      return safeError(502, "invalid_kimi_json_shape", {
+        output: describeInvalidKimiJson(kimiJson),
+      });
     }
 
     return jsonResponse(validatedResponse);
