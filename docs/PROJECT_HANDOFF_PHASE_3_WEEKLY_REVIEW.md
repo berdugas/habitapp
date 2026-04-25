@@ -222,8 +222,11 @@ Approved plan:
 - Defer Today CTA.
 
 Important UI validation rule:
-- Completely blank review is blocked.
-- A `No` answer on a nullable yes/no field counts as a valid reflection.
+- Phase 3.1 originally allowed saving once the review had any reflection.
+- Phase 4.3 tightened the current review contract: users must answer both yes/no questions before saving:
+  - `Did your trigger work?`
+  - `Was the tiny action too hard?`
+- The visible `Unanswered` option was removed in Phase 4.3. Existing stored `null` values may still display as `Not answered` on Habit Detail for backwards compatibility.
 
 ---
 
