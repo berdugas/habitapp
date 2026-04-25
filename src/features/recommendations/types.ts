@@ -10,6 +10,7 @@ export type HabitAdjustmentSuggestionType =
 
 export type HabitAdjustmentSuggestion = {
   body: string;
+  reason: string;
   title: string;
   type: HabitAdjustmentSuggestionType;
 };

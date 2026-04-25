@@ -262,6 +262,9 @@ export default function WeeklyReviewScreen() {
           placeholder="The part that got in the way"
           value={wasHard}
         />
+        <Text selectable style={styles.booleanHelper}>
+          These answers help the app suggest what to adjust next week.
+        </Text>
         <NullableBooleanField
           label="Did your trigger work?"
           onChange={setTriggerWorked}
@@ -302,6 +305,12 @@ export default function WeeklyReviewScreen() {
           <Text selectable style={styles.suggestionBody}>
             {adjustmentSuggestion.body}
           </Text>
+          <Text selectable style={styles.suggestionReasonLabel}>
+            Why this suggestion
+          </Text>
+          <Text selectable style={styles.suggestionReason}>
+            {adjustmentSuggestion.reason}
+          </Text>
         </View>
       ) : null}
 
@@ -326,6 +335,11 @@ const styles = StyleSheet.create({
   },
   booleanField: {
     gap: spacing.sm,
+  },
+  booleanHelper: {
+    color: colors.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
   },
   booleanLabel: {
     color: colors.text,
@@ -397,6 +411,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     textTransform: "uppercase",
+  },
+  suggestionReason: {
+    color: colors.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  suggestionReasonLabel: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "700",
   },
   suggestionTitle: {
     color: colors.text,

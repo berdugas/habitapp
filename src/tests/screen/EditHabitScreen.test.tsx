@@ -102,10 +102,14 @@ describe("EditHabitScreen", () => {
 
     expect(screen.getByText("Suggested adjustment")).toBeTruthy();
     expect(screen.getByText("Make the action smaller")).toBeTruthy();
+    expect(screen.getByText("Why this suggestion")).toBeTruthy();
     expect(
       screen.getByText(
         "Try choosing a tiny action that feels almost effortless for one week.",
       ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText("You answered that the tiny action was too hard."),
     ).toBeTruthy();
     expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
   });
@@ -120,10 +124,14 @@ describe("EditHabitScreen", () => {
 
     expect(screen.getByText("Suggested adjustment")).toBeTruthy();
     expect(screen.getByText("Choose a clearer trigger")).toBeTruthy();
+    expect(screen.getByText("Why this suggestion")).toBeTruthy();
     expect(
       screen.getByText(
         "Try attaching this habit to a specific moment that already happens every day.",
       ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText("You answered that the trigger did not work."),
     ).toBeTruthy();
   });
 
@@ -137,6 +145,7 @@ describe("EditHabitScreen", () => {
 
     expect(screen.queryByText("Suggested adjustment")).toBeNull();
     expect(screen.queryByText("Make the action smaller")).toBeNull();
+    expect(screen.queryByText("Why this suggestion")).toBeNull();
     expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
   });
 

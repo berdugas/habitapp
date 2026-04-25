@@ -68,6 +68,7 @@ describe("getHabitAdjustmentSuggestion", () => {
 
     expect(suggestion).toEqual({
       body: "Your tiny action may still be too hard. Try making it so small that it feels almost effortless for one week.",
+      reason: "You answered that the tiny action was too hard.",
       title: "Make it smaller next week",
       type: "make_tiny_action_smaller",
     });
@@ -83,6 +84,7 @@ describe("getHabitAdjustmentSuggestion", () => {
 
     expect(suggestion.type).toBe("change_trigger");
     expect(suggestion.title).toBe("Adjust your trigger");
+    expect(suggestion.reason).toBe("You answered that the trigger did not work.");
   });
 
   it("suggests reducing friction when consistency is low", () => {
@@ -96,6 +98,9 @@ describe("getHabitAdjustmentSuggestion", () => {
 
     expect(suggestion.type).toBe("reduce_friction");
     expect(suggestion.title).toBe("Reduce the friction");
+    expect(suggestion.reason).toBe(
+      "Your recent consistency or skip pattern suggests this habit may need an easier setup.",
+    );
   });
 
   it("suggests reducing friction when skip count is high", () => {
@@ -108,6 +113,9 @@ describe("getHabitAdjustmentSuggestion", () => {
     });
 
     expect(suggestion.type).toBe("reduce_friction");
+    expect(suggestion.reason).toBe(
+      "Your recent consistency or skip pattern suggests this habit may need an easier setup.",
+    );
   });
 
   it("suggests planning around the hard part when the review names an obstacle", () => {
@@ -120,6 +128,9 @@ describe("getHabitAdjustmentSuggestion", () => {
 
     expect(suggestion.type).toBe("plan_for_obstacle");
     expect(suggestion.title).toBe("Plan around the hard part");
+    expect(suggestion.reason).toBe(
+      "You wrote about something that made the habit hard this week.",
+    );
   });
 
   it("suggests keeping the habit stable when no issue rule matches", () => {
@@ -127,6 +138,7 @@ describe("getHabitAdjustmentSuggestion", () => {
 
     expect(suggestion).toEqual({
       body: "This habit seems workable. Keep the same trigger and tiny action for another week before making changes.",
+      reason: "Your review does not point to a major change yet.",
       title: "Keep it stable",
       type: "keep_going",
     });

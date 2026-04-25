@@ -137,6 +137,11 @@ describe("WeeklyReviewScreen", () => {
     expect(screen.getByText("What was hard this week?")).toBeTruthy();
     expect(screen.getByText("Did your trigger work?")).toBeTruthy();
     expect(screen.getByText("Was the tiny action too hard?")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "These answers help the app suggest what to adjust next week.",
+      ),
+    ).toBeTruthy();
     expect(screen.queryByText("Unanswered")).toBeNull();
     expect(
       screen.getByText("What small adjustment do you want to try next week?"),
@@ -256,6 +261,10 @@ describe("WeeklyReviewScreen", () => {
     ).toBeTruthy();
     expect(screen.getByText("Suggested adjustment")).toBeTruthy();
     expect(screen.getByText("Keep it stable")).toBeTruthy();
+    expect(screen.getByText("Why this suggestion")).toBeTruthy();
+    expect(
+      screen.getByText("Your review does not point to a major change yet."),
+    ).toBeTruthy();
     expect(mockReplace).not.toHaveBeenCalled();
 
     act(() => {
@@ -310,6 +319,10 @@ describe("WeeklyReviewScreen", () => {
       expect(screen.getByText("Suggested adjustment")).toBeTruthy();
     });
     expect(screen.getByText("Make it smaller next week")).toBeTruthy();
+    expect(screen.getByText("Why this suggestion")).toBeTruthy();
+    expect(
+      screen.getByText("You answered that the tiny action was too hard."),
+    ).toBeTruthy();
   });
 
   it("shows a trigger suggestion after saving a review that says the trigger did not work", async () => {
@@ -329,6 +342,10 @@ describe("WeeklyReviewScreen", () => {
       expect(screen.getByText("Suggested adjustment")).toBeTruthy();
     });
     expect(screen.getByText("Adjust your trigger")).toBeTruthy();
+    expect(screen.getByText("Why this suggestion")).toBeTruthy();
+    expect(
+      screen.getByText("You answered that the trigger did not work."),
+    ).toBeTruthy();
   });
 
   it("falls back to Habit Detail for unrecognized returnTo values", async () => {

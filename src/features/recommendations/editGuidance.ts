@@ -1,13 +1,16 @@
+import { HABIT_ADJUSTMENT_SUGGESTIONS } from "@/features/recommendations/copy";
+
 import type { HabitAdjustmentSuggestionType } from "@/features/recommendations/types";
 
 export type HabitSuggestionEditGuidance = {
   body: string;
+  reason: string;
   title: string;
 };
 
-export const HABIT_SUGGESTION_EDIT_GUIDANCE: Record<
+const HABIT_SUGGESTION_EDIT_GUIDANCE_COPY: Record<
   HabitAdjustmentSuggestionType,
-  HabitSuggestionEditGuidance
+  Omit<HabitSuggestionEditGuidance, "reason">
 > = {
   change_trigger: {
     body: "Try attaching this habit to a specific moment that already happens every day.",
@@ -28,6 +31,32 @@ export const HABIT_SUGGESTION_EDIT_GUIDANCE: Record<
   reduce_friction: {
     body: "Try changing the setup so starting this habit takes less effort.",
     title: "Reduce the friction",
+  },
+};
+
+export const HABIT_SUGGESTION_EDIT_GUIDANCE: Record<
+  HabitAdjustmentSuggestionType,
+  HabitSuggestionEditGuidance
+> = {
+  change_trigger: {
+    ...HABIT_SUGGESTION_EDIT_GUIDANCE_COPY.change_trigger,
+    reason: HABIT_ADJUSTMENT_SUGGESTIONS.change_trigger.reason,
+  },
+  keep_going: {
+    ...HABIT_SUGGESTION_EDIT_GUIDANCE_COPY.keep_going,
+    reason: HABIT_ADJUSTMENT_SUGGESTIONS.keep_going.reason,
+  },
+  make_tiny_action_smaller: {
+    ...HABIT_SUGGESTION_EDIT_GUIDANCE_COPY.make_tiny_action_smaller,
+    reason: HABIT_ADJUSTMENT_SUGGESTIONS.make_tiny_action_smaller.reason,
+  },
+  plan_for_obstacle: {
+    ...HABIT_SUGGESTION_EDIT_GUIDANCE_COPY.plan_for_obstacle,
+    reason: HABIT_ADJUSTMENT_SUGGESTIONS.plan_for_obstacle.reason,
+  },
+  reduce_friction: {
+    ...HABIT_SUGGESTION_EDIT_GUIDANCE_COPY.reduce_friction,
+    reason: HABIT_ADJUSTMENT_SUGGESTIONS.reduce_friction.reason,
   },
 };
 

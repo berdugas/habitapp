@@ -151,6 +151,12 @@ export default function EditHabitScreen() {
           <Text selectable style={styles.suggestionBody}>
             {suggestionGuidance.body}
           </Text>
+          <Text selectable style={styles.suggestionReasonLabel}>
+            Why this suggestion
+          </Text>
+          <Text selectable style={styles.suggestionReason}>
+            {suggestionGuidance.reason}
+          </Text>
         </View>
       ) : null}
 
@@ -277,6 +283,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     textTransform: "uppercase",
+  },
+  suggestionReason: {
+    color: colors.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  suggestionReasonLabel: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "700",
   },
   suggestionTitle: {
     color: colors.text,

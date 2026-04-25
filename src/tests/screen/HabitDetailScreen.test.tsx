@@ -213,6 +213,12 @@ describe("HabitDetailScreen", () => {
     expect(screen.getByText("No")).toBeTruthy();
     expect(screen.getByText("Suggested adjustment")).toBeTruthy();
     expect(screen.getByText("Reduce the friction")).toBeTruthy();
+    expect(screen.getByText("Why this suggestion")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Your recent consistency or skip pattern suggests this habit may need an easier setup.",
+      ),
+    ).toBeTruthy();
     expect(screen.getByText("Review suggestion")).toBeTruthy();
 
     fireEvent.press(screen.getByText("Update weekly review"));
@@ -264,6 +270,10 @@ describe("HabitDetailScreen", () => {
 
     expect(screen.getByText("Suggested adjustment")).toBeTruthy();
     expect(screen.getByText("Make it smaller next week")).toBeTruthy();
+    expect(screen.getByText("Why this suggestion")).toBeTruthy();
+    expect(
+      screen.getByText("You answered that the tiny action was too hard."),
+    ).toBeTruthy();
     expect(screen.getByText("Review suggestion")).toBeTruthy();
   });
 
@@ -364,6 +374,10 @@ describe("HabitDetailScreen", () => {
 
     expect(screen.getByText("Suggested adjustment")).toBeTruthy();
     expect(screen.getByText("Adjust your trigger")).toBeTruthy();
+    expect(screen.getByText("Why this suggestion")).toBeTruthy();
+    expect(
+      screen.getByText("You answered that the trigger did not work."),
+    ).toBeTruthy();
   });
 
   it("hides optional setup fields when they are absent", () => {
