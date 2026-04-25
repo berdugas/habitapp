@@ -6,7 +6,8 @@ import { PrimaryButton } from "@/components/buttons/PrimaryButton";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { LoadingState } from "@/components/feedback/LoadingState";
 import { TextField } from "@/components/forms/TextField";
-import { useOwnedHabitQuery } from "@/features/habits/hooks";
+import { useHabitDetail } from "@/features/habits/hooks";
+import { getHabitAdjustmentSuggestion } from "@/features/recommendations/habitAdjustmentEngine";
 import {
   useCurrentWeeklyReviewQuery,
   useUpsertWeeklyReviewMutation,
@@ -19,6 +20,8 @@ import {
   getLoadWeeklyReviewErrorMessage,
   getSaveWeeklyReviewErrorMessage,
 } from "@/utils/userFacingErrors";
+
+import type { HabitAdjustmentSuggestion } from "@/features/recommendations/types";
 
 type NullableBooleanFieldProps = {
   label: string;
@@ -101,7 +104,7 @@ export default function WeeklyReviewScreen() {
   const habitId = normalizeHabitId(habitIdParam);
   const returnTo = normalizeReturnTo(returnToParam);
   const weekStart = getWeekStartDateString();
-  const habitQuery = useOwnedHabitQuery(habitId);
+  const habitDetail = useHabitDetail(habitId);
   const currentReviewQuery = useCurrentWeeklyReviewQuery(habitId);
   const upsertWeeklyReviewMutation = useUpsertWeeklyReviewMutation();
   const saveSubmitLockRef = useRef(false);
@@ -119,6 +122,8 @@ export default function WeeklyReviewScreen() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState(false);
   const [reviewSaved, setReviewSaved] = useState(false);
+  const [adjustmentSuggestion, setAdjustmentSuggestion] =
+    useState<HabitAdjustmentSuggestion | null>(null);
 
   useEffect(() => {
     return () => {
@@ -155,6 +160,7 @@ export default function WeeklyReviewScreen() {
   async function handleSavePress() {
     if (
       !habitId ||
+      !habitDetail.habit ||
       saveSubmitLockRef.current ||
       upsertWeeklyReviewMutation.isPending ||
       reviewSaved
@@ -165,6 +171,7 @@ export default function WeeklyReviewScreen() {
     setValidationError(null);
     setSaveError(false);
     setReviewSaved(false);
+    setAdjustmentSuggestion(null);
 
     if (!hasAtLeastOneReflection()) {
       setValidationError("Add at least one reflection before saving.");
@@ -174,7 +181,7 @@ export default function WeeklyReviewScreen() {
     saveSubmitLockRef.current = true;
 
     try {
-      await upsertWeeklyReviewMutation.mutateAsync({
+      const savedReview = await upsertWeeklyReviewMutation.mutateAsync({
         adjustmentNote: adjustmentNote.trim(),
         habitId,
         tinyActionTooHard,
@@ -183,6 +190,13 @@ export default function WeeklyReviewScreen() {
         weekStart,
         wentWell: wentWell.trim(),
       });
+      setAdjustmentSuggestion(
+        getHabitAdjustmentSuggestion({
+          habit: habitDetail.habit,
+          latestReview: savedReview,
+          progress: habitDetail.progress,
+        }),
+      );
       setReviewSaved(true);
 
       const destination =
@@ -193,15 +207,16 @@ export default function WeeklyReviewScreen() {
       }, REVIEW_SAVE_SUCCESS_DELAY_MS);
     } catch {
       setSaveError(true);
+      setAdjustmentSuggestion(null);
       saveSubmitLockRef.current = false;
     }
   }
 
-  if (habitQuery.isLoading || currentReviewQuery.isLoading) {
+  if (habitDetail.isLoading || currentReviewQuery.isLoading) {
     return <LoadingState message="Loading weekly review..." />;
   }
 
-  if (habitQuery.error || currentReviewQuery.error || !habitQuery.data) {
+  if (habitDetail.error || currentReviewQuery.error || !habitDetail.habit) {
     return (
       <ScrollView
         contentContainerStyle={styles.content}
@@ -232,7 +247,7 @@ export default function WeeklyReviewScreen() {
 
       <View style={styles.card}>
         <Text selectable style={styles.cardTitle}>
-          {habitQuery.data.name}
+          {habitDetail.habit.name}
         </Text>
         <Text selectable style={styles.body}>
           Week of {weekStart}
@@ -250,6 +265,19 @@ export default function WeeklyReviewScreen() {
           </Text>
           <Text selectable style={styles.successBody}>
             Your habit reflection has been updated for this week.
+          </Text>
+        </View>
+      ) : null}
+      {adjustmentSuggestion ? (
+        <View style={styles.suggestionCard}>
+          <Text selectable style={styles.suggestionEyebrow}>
+            Suggested adjustment
+          </Text>
+          <Text selectable style={styles.suggestionTitle}>
+            {adjustmentSuggestion.title}
+          </Text>
+          <Text selectable style={styles.suggestionBody}>
+            {adjustmentSuggestion.body}
           </Text>
         </View>
       ) : null}
@@ -360,6 +388,30 @@ const styles = StyleSheet.create({
   successTitle: {
     color: colors.success,
     fontSize: 16,
+    fontWeight: "700",
+  },
+  suggestionBody: {
+    color: colors.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  suggestionCard: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: spacing.sm,
+    padding: spacing.lg,
+  },
+  suggestionEyebrow: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  suggestionTitle: {
+    color: colors.text,
+    fontSize: 18,
     fontWeight: "700",
   },
   segmentButton: {

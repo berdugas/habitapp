@@ -10,7 +10,7 @@ import WeeklyReviewScreen from "@/features/reviews/screens/WeeklyReviewScreen";
 
 const mockReplace = jest.fn();
 const mockUseLocalSearchParams = jest.fn();
-const mockUseOwnedHabitQuery = jest.fn();
+const mockUseHabitDetail = jest.fn();
 const mockUseCurrentWeeklyReviewQuery = jest.fn();
 const mockUseUpsertWeeklyReviewMutation = jest.fn();
 const mockMutateAsync = jest.fn();
@@ -23,8 +23,8 @@ jest.mock("expo-router", () => ({
 }));
 
 jest.mock("@/features/habits/hooks", () => ({
-  useOwnedHabitQuery: (habitId: string | string[] | undefined) =>
-    mockUseOwnedHabitQuery(habitId),
+  useHabitDetail: (habitId: string | string[] | undefined) =>
+    mockUseHabitDetail(habitId),
 }));
 
 jest.mock("@/features/reviews/hooks", () => ({
@@ -37,6 +37,20 @@ jest.mock("@/utils/dates", () => ({
   getWeekStartDateString: () => "2026-04-20",
 }));
 
+const savedReview = {
+  adjustment_note: "Move the book",
+  created_at: "2026-04-24T00:00:00.000Z",
+  habit_id: "habit-1",
+  id: "review-1",
+  tiny_action_too_hard: false,
+  trigger_worked: true,
+  updated_at: "2026-04-24T00:00:00.000Z",
+  user_id: "user-1",
+  was_hard: null,
+  week_start: "2026-04-20",
+  went_well: "Breakfast cue worked",
+};
+
 describe("WeeklyReviewScreen", () => {
   afterEach(() => {
     jest.useRealTimers();
@@ -47,13 +61,23 @@ describe("WeeklyReviewScreen", () => {
     mockUseLocalSearchParams.mockReturnValue({
       habitId: "habit-1",
     });
-    mockUseOwnedHabitQuery.mockReturnValue({
-      data: {
+    mockUseHabitDetail.mockReturnValue({
+      error: null,
+      formula: "After breakfast, I will Read 1 page.",
+      habit: {
         id: "habit-1",
         name: "Reading",
       },
-      error: null,
       isLoading: false,
+      isUpcoming: false,
+      latestReview: null,
+      progress: {
+        consistencyRate: 1,
+        skipCount: 0,
+        streak: 3,
+        todayStatus: "done",
+      },
+      recentLogs: [],
     });
     mockUseCurrentWeeklyReviewQuery.mockReturnValue({
       data: null,
@@ -65,16 +89,20 @@ describe("WeeklyReviewScreen", () => {
       isPending: false,
       mutateAsync: mockMutateAsync,
     });
-    mockMutateAsync.mockResolvedValue({
-      id: "review-1",
-    });
+    mockMutateAsync.mockResolvedValue(savedReview);
   });
 
   it("shows a loading state while habit or review data is resolving", () => {
-    mockUseOwnedHabitQuery.mockReturnValue({
-      data: null,
+    mockUseHabitDetail.mockReturnValue({
       error: null,
+      habit: null,
       isLoading: true,
+      progress: {
+        consistencyRate: 0,
+        skipCount: 0,
+        streak: 0,
+        todayStatus: null,
+      },
     });
 
     render(<WeeklyReviewScreen />);
@@ -101,7 +129,7 @@ describe("WeeklyReviewScreen", () => {
   it("renders the habit name and empty form for a new current-week review", () => {
     render(<WeeklyReviewScreen />);
 
-    expect(mockUseOwnedHabitQuery).toHaveBeenCalledWith("habit-1");
+    expect(mockUseHabitDetail).toHaveBeenCalledWith("habit-1");
     expect(mockUseCurrentWeeklyReviewQuery).toHaveBeenCalledWith("habit-1");
     expect(screen.getByText("Reading")).toBeTruthy();
     expect(screen.getByText("Week of 2026-04-20")).toBeTruthy();
@@ -210,6 +238,8 @@ describe("WeeklyReviewScreen", () => {
         "Your habit reflection has been updated for this week.",
       ),
     ).toBeTruthy();
+    expect(screen.getByText("Suggested adjustment")).toBeTruthy();
+    expect(screen.getByText("Keep it stable")).toBeTruthy();
     expect(mockReplace).not.toHaveBeenCalled();
 
     act(() => {
@@ -243,6 +273,42 @@ describe("WeeklyReviewScreen", () => {
     });
 
     expect(mockReplace).toHaveBeenCalledWith("/(app)/(tabs)/today");
+  });
+
+  it("shows a tiny-action suggestion after saving a review that says the action was too hard", async () => {
+    jest.useFakeTimers();
+    mockMutateAsync.mockResolvedValueOnce({
+      ...savedReview,
+      tiny_action_too_hard: true,
+    });
+
+    render(<WeeklyReviewScreen />);
+
+    fireEvent.press(screen.getByLabelText("Was the tiny action too hard?: Yes"));
+    fireEvent.press(screen.getByText("Save weekly review"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Suggested adjustment")).toBeTruthy();
+    });
+    expect(screen.getByText("Make it smaller next week")).toBeTruthy();
+  });
+
+  it("shows a trigger suggestion after saving a review that says the trigger did not work", async () => {
+    jest.useFakeTimers();
+    mockMutateAsync.mockResolvedValueOnce({
+      ...savedReview,
+      trigger_worked: false,
+    });
+
+    render(<WeeklyReviewScreen />);
+
+    fireEvent.press(screen.getByLabelText("Did your trigger work?: No"));
+    fireEvent.press(screen.getByText("Save weekly review"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Suggested adjustment")).toBeTruthy();
+    });
+    expect(screen.getByText("Adjust your trigger")).toBeTruthy();
   });
 
   it("falls back to Habit Detail for unrecognized returnTo values", async () => {
@@ -330,6 +396,7 @@ describe("WeeklyReviewScreen", () => {
     });
 
     expect(screen.getByDisplayValue("I showed up")).toBeTruthy();
+    expect(screen.queryByText("Suggested adjustment")).toBeNull();
     expect(mockReplace).not.toHaveBeenCalled();
   });
 });
