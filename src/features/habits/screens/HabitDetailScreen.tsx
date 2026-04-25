@@ -368,6 +368,18 @@ export default function HabitDetailScreen() {
           <Text selectable style={styles.suggestionBody}>
             {adjustmentSuggestion.body}
           </Text>
+          <SecondaryButton
+            label="Review suggestion"
+            onPress={() =>
+              router.push({
+                pathname: "/(app)/habits/[habitId]/edit",
+                params: {
+                  habitId: habit.id,
+                  suggestionType: adjustmentSuggestion.type,
+                },
+              })
+            }
+          />
         </View>
       ) : null}
 

@@ -83,12 +83,61 @@ describe("EditHabitScreen", () => {
     render(<EditHabitScreen />);
 
     expect(mockUseOwnedHabitQuery).toHaveBeenCalledWith("habit-1");
+    expect(screen.queryByText("Suggested adjustment")).toBeNull();
     expect(screen.getByDisplayValue("Reading")).toBeTruthy();
     expect(screen.getByDisplayValue("Become a reader")).toBeTruthy();
     expect(screen.getByDisplayValue("After I brush my teeth")).toBeTruthy();
     expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
     expect(screen.getByDisplayValue("Evening")).toBeTruthy();
     expect(screen.getByDisplayValue("20:00")).toBeTruthy();
+  });
+
+  it("shows tiny-action suggestion guidance without changing hydrated fields", () => {
+    mockUseLocalSearchParams.mockReturnValue({
+      habitId: "habit-1",
+      suggestionType: "make_tiny_action_smaller",
+    });
+
+    render(<EditHabitScreen />);
+
+    expect(screen.getByText("Suggested adjustment")).toBeTruthy();
+    expect(screen.getByText("Make the action smaller")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Try choosing a tiny action that feels almost effortless for one week.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
+  });
+
+  it("shows trigger suggestion guidance for a valid suggestion type", () => {
+    mockUseLocalSearchParams.mockReturnValue({
+      habitId: "habit-1",
+      suggestionType: "change_trigger",
+    });
+
+    render(<EditHabitScreen />);
+
+    expect(screen.getByText("Suggested adjustment")).toBeTruthy();
+    expect(screen.getByText("Choose a clearer trigger")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Try attaching this habit to a specific moment that already happens every day.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("hides suggestion guidance for an invalid suggestion type", () => {
+    mockUseLocalSearchParams.mockReturnValue({
+      habitId: "habit-1",
+      suggestionType: "rewrite_everything",
+    });
+
+    render(<EditHabitScreen />);
+
+    expect(screen.queryByText("Suggested adjustment")).toBeNull();
+    expect(screen.queryByText("Make the action smaller")).toBeNull();
+    expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
   });
 
   it("normalizes database reminder times with seconds before showing the form", () => {

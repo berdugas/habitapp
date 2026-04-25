@@ -137,6 +137,7 @@ describe("WeeklyReviewScreen", () => {
     expect(screen.getByText("What was hard this week?")).toBeTruthy();
     expect(screen.getByText("Did your trigger work?")).toBeTruthy();
     expect(screen.getByText("Was the tiny action too hard?")).toBeTruthy();
+    expect(screen.queryByText("Unanswered")).toBeNull();
     expect(
       screen.getByText("What small adjustment do you want to try next week?"),
     ).toBeTruthy();
@@ -173,23 +174,38 @@ describe("WeeklyReviewScreen", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Add at least one reflection before saving."),
+        screen.getByText("Answer both yes/no questions before saving."),
       ).toBeTruthy();
     });
     expect(mockMutateAsync).not.toHaveBeenCalled();
   });
 
-  it("counts a No answer as a valid reflection", async () => {
+  it("requires both yes/no questions before saving", async () => {
     render(<WeeklyReviewScreen />);
 
     fireEvent.press(screen.getByLabelText("Did your trigger work?: No"));
     fireEvent.press(screen.getByText("Save weekly review"));
 
     await waitFor(() => {
+      expect(
+        screen.getByText("Answer both yes/no questions before saving."),
+      ).toBeTruthy();
+    });
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("saves a review when both yes/no questions are answered", async () => {
+    render(<WeeklyReviewScreen />);
+
+    fireEvent.press(screen.getByLabelText("Did your trigger work?: No"));
+    fireEvent.press(screen.getByLabelText("Was the tiny action too hard?: No"));
+    fireEvent.press(screen.getByText("Save weekly review"));
+
+    await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalledWith({
         adjustmentNote: "",
         habitId: "habit-1",
-        tinyActionTooHard: null,
+        tinyActionTooHard: false,
         triggerWorked: false,
         wasHard: "",
         weekStart: "2026-04-20",
@@ -262,6 +278,8 @@ describe("WeeklyReviewScreen", () => {
       screen.getByPlaceholderText("The moment that felt easiest"),
       "I showed up",
     );
+    fireEvent.press(screen.getByLabelText("Did your trigger work?: Yes"));
+    fireEvent.press(screen.getByLabelText("Was the tiny action too hard?: No"));
     fireEvent.press(screen.getByText("Save weekly review"));
 
     await waitFor(() => {
@@ -284,6 +302,7 @@ describe("WeeklyReviewScreen", () => {
 
     render(<WeeklyReviewScreen />);
 
+    fireEvent.press(screen.getByLabelText("Did your trigger work?: Yes"));
     fireEvent.press(screen.getByLabelText("Was the tiny action too hard?: Yes"));
     fireEvent.press(screen.getByText("Save weekly review"));
 
@@ -303,6 +322,7 @@ describe("WeeklyReviewScreen", () => {
     render(<WeeklyReviewScreen />);
 
     fireEvent.press(screen.getByLabelText("Did your trigger work?: No"));
+    fireEvent.press(screen.getByLabelText("Was the tiny action too hard?: No"));
     fireEvent.press(screen.getByText("Save weekly review"));
 
     await waitFor(() => {
@@ -324,6 +344,8 @@ describe("WeeklyReviewScreen", () => {
       screen.getByPlaceholderText("The moment that felt easiest"),
       "I showed up",
     );
+    fireEvent.press(screen.getByLabelText("Did your trigger work?: Yes"));
+    fireEvent.press(screen.getByLabelText("Was the tiny action too hard?: No"));
     fireEvent.press(screen.getByText("Save weekly review"));
 
     await waitFor(() => {
@@ -385,6 +407,8 @@ describe("WeeklyReviewScreen", () => {
       screen.getByPlaceholderText("The moment that felt easiest"),
       "I showed up",
     );
+    fireEvent.press(screen.getByLabelText("Did your trigger work?: Yes"));
+    fireEvent.press(screen.getByLabelText("Was the tiny action too hard?: No"));
     fireEvent.press(screen.getByText("Save weekly review"));
 
     await waitFor(() => {

@@ -16,6 +16,7 @@ import {
   normalizeHabitSetupPayload,
   validateHabitSetupPayload,
 } from "@/features/habits/validators";
+import { getHabitSuggestionEditGuidance } from "@/features/recommendations/editGuidance";
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
 import { spacing } from "@/theme/spacing";
@@ -25,11 +26,15 @@ import {
 } from "@/utils/userFacingErrors";
 
 export default function EditHabitScreen() {
-  const { habitId } = useLocalSearchParams<{ habitId?: string | string[] }>();
+  const { habitId, suggestionType } = useLocalSearchParams<{
+    habitId?: string | string[];
+    suggestionType?: string | string[];
+  }>();
   const ownedHabitQuery = useOwnedHabitQuery(habitId);
   const updateHabitMutation = useUpdateHabitMutation();
   const hasHydratedFormRef = useRef(false);
   const submitLockRef = useRef(false);
+  const suggestionGuidance = getHabitSuggestionEditGuidance(suggestionType);
 
   const [name, setName] = useState("");
   const [identityStatement, setIdentityStatement] = useState("");
@@ -135,6 +140,20 @@ export default function EditHabitScreen() {
         Edit Habit
       </Text>
 
+      {suggestionGuidance ? (
+        <View style={styles.suggestionCard}>
+          <Text selectable style={styles.suggestionEyebrow}>
+            Suggested adjustment
+          </Text>
+          <Text selectable style={styles.suggestionTitle}>
+            {suggestionGuidance.title}
+          </Text>
+          <Text selectable style={styles.suggestionBody}>
+            {suggestionGuidance.body}
+          </Text>
+        </View>
+      ) : null}
+
       <View style={styles.formCard}>
         {formError ? <ErrorState message={formError} /> : null}
         <TextField
@@ -239,6 +258,30 @@ const styles = StyleSheet.create({
   screen: {
     backgroundColor: colors.background,
     flex: 1,
+  },
+  suggestionBody: {
+    color: colors.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  suggestionCard: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: spacing.sm,
+    padding: spacing.xl,
+  },
+  suggestionEyebrow: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  suggestionTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "700",
   },
   title: {
     color: colors.text,

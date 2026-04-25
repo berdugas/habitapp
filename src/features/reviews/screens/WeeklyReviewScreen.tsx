@@ -50,8 +50,7 @@ function NullableBooleanField({
   onChange,
   value,
 }: NullableBooleanFieldProps) {
-  const options: Array<{ label: string; value: boolean | null }> = [
-    { label: "Unanswered", value: null },
+  const options: Array<{ label: string; value: boolean }> = [
     { label: "Yes", value: true },
     { label: "No", value: false },
   ];
@@ -147,16 +146,6 @@ export default function WeeklyReviewScreen() {
     setTinyActionTooHard(review.tiny_action_too_hard);
   }, [currentReviewQuery.data]);
 
-  function hasAtLeastOneReflection() {
-    return (
-      Boolean(wentWell.trim()) ||
-      Boolean(wasHard.trim()) ||
-      Boolean(adjustmentNote.trim()) ||
-      triggerWorked !== null ||
-      tinyActionTooHard !== null
-    );
-  }
-
   async function handleSavePress() {
     if (
       !habitId ||
@@ -173,8 +162,8 @@ export default function WeeklyReviewScreen() {
     setReviewSaved(false);
     setAdjustmentSuggestion(null);
 
-    if (!hasAtLeastOneReflection()) {
-      setValidationError("Add at least one reflection before saving.");
+    if (triggerWorked === null || tinyActionTooHard === null) {
+      setValidationError("Answer both yes/no questions before saving.");
       return;
     }
 
