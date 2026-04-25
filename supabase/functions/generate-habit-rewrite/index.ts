@@ -354,7 +354,9 @@ async function callKimi(prompt: string) {
             },
           ],
           model,
-          temperature: 0.2,
+          thinking: {
+            type: "disabled",
+          },
         }),
         headers: {
           Authorization: `Bearer ${apiKey}`,

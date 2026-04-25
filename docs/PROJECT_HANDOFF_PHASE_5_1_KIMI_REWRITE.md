@@ -22,6 +22,8 @@ it never writes into Stack trigger, Tiny action, or any other form field.
 - Do not expose Kimi credentials through `EXPO_PUBLIC_` variables.
 - The function validates model JSON strictly before returning it.
 - The client validates the function response again before rendering it.
+- For `kimi-k2.5`, do not send custom sampling values such as `temperature`.
+  The function uses `thinking: { type: "disabled" }` for this short JSON draft.
 
 ## Deferred Intentionally
 
