@@ -61,6 +61,10 @@ export default function TodayScreen() {
     router.push(`/(app)/habits/${habitId}`);
   }
 
+  function openWeeklyReview(habitId: string) {
+    router.push(`/(app)/reviews/${habitId}`);
+  }
+
   async function handleStatusPress(habitId: string, status: HabitLogStatus) {
     if (
       statusSubmitLockRef.current ||
@@ -175,6 +179,22 @@ export default function TodayScreen() {
                 </Text>
               </View>
             </View>
+            {habit.isWeeklyReviewDue ? (
+              <View style={styles.reviewPrompt}>
+                <View style={styles.reviewPromptCopy}>
+                  <Text selectable style={styles.reviewPromptTitle}>
+                    Weekly review due
+                  </Text>
+                  <Text selectable style={styles.reviewPromptBody}>
+                    Reflect on what worked and what needs adjusting.
+                  </Text>
+                </View>
+                <SecondaryButton
+                  label="Start review"
+                  onPress={() => openWeeklyReview(habit.id)}
+                />
+              </View>
+            ) : null}
             <View style={styles.actionsRow}>
               {PHASE_2A_HABIT_LOG_STATUS_VALUES.map((status) => {
                 const isSelected = habit.todayStatus === status;
@@ -253,6 +273,25 @@ const styles = StyleSheet.create({
   progressValue: {
     color: colors.text,
     fontSize: 18,
+    fontWeight: "700",
+  },
+  reviewPrompt: {
+    backgroundColor: colors.accentSoft,
+    borderRadius: radius.lg,
+    gap: spacing.md,
+    padding: spacing.lg,
+  },
+  reviewPromptBody: {
+    color: colors.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  reviewPromptCopy: {
+    gap: spacing.xs,
+  },
+  reviewPromptTitle: {
+    color: colors.accent,
+    fontSize: 16,
     fontWeight: "700",
   },
   upcomingSection: {

@@ -1,4 +1,5 @@
 const mockUseQuery = jest.fn();
+const mockUseQueries = jest.fn();
 const mockUseMutation = jest.fn();
 const mockInvalidateQueries = jest.fn();
 const mockFetchQuery = jest.fn();
@@ -6,14 +7,17 @@ const mockUseAuthSession = jest.fn();
 const mockUseEligibleHabitsQuery = jest.fn();
 const mockUseUpcomingActiveHabitsQuery = jest.fn();
 const mockGetHabitLogsInRange = jest.fn();
+const mockGetLatestWeeklyReview = jest.fn();
 const mockUpsertHabitLog = jest.fn();
 const mockToDeviceDateString = jest.fn();
+const mockGetWeekStartDateString = jest.fn();
 const mockGetTrailingDateRangeStrings = jest.fn();
 const mockAddDeviceDays = jest.fn();
 const mockLoggerError = jest.fn();
 
 jest.mock("@tanstack/react-query", () => ({
   useMutation: (options: unknown) => mockUseMutation(options),
+  useQueries: (options: unknown) => mockUseQueries(options),
   useQuery: (options: unknown) => mockUseQuery(options),
   useQueryClient: () => ({
     fetchQuery: (options: unknown) => mockFetchQuery(options),
@@ -40,8 +44,14 @@ jest.mock("@/features/habits/api", () => ({
     mockUpsertHabitLog(userId, payload),
 }));
 
+jest.mock("@/features/reviews/api", () => ({
+  getLatestWeeklyReview: (userId: string, habitId: string) =>
+    mockGetLatestWeeklyReview(userId, habitId),
+}));
+
 jest.mock("@/utils/dates", () => ({
   addDeviceDays: (date: Date, amount: number) => mockAddDeviceDays(date, amount),
+  getWeekStartDateString: () => mockGetWeekStartDateString(),
   getTrailingDateRangeStrings: (windowDays: number, endDate?: Date) =>
     mockGetTrailingDateRangeStrings(windowDays, endDate),
   toDeviceDateString: (date?: Date) => mockToDeviceDateString(date),
@@ -58,6 +68,7 @@ import {
   useTodayHabits,
   useUpsertTodayHabitStatusMutation,
 } from "@/features/today/hooks";
+import { getLatestWeeklyReviewQueryKey } from "@/features/reviews/queryKeys";
 
 describe("today hooks", () => {
   beforeEach(() => {
@@ -73,6 +84,7 @@ describe("today hooks", () => {
       error: null,
       isLoading: false,
     });
+    mockUseQueries.mockReturnValue([]);
     mockUseEligibleHabitsQuery.mockReturnValue({
       data: [],
       error: null,
@@ -89,6 +101,7 @@ describe("today hooks", () => {
       endDate: "2026-04-23",
       startDate: "2026-03-25",
     });
+    mockGetWeekStartDateString.mockReturnValue("2026-04-20");
     mockToDeviceDateString.mockImplementation((date?: Date) => {
       const safeDate = date ?? new Date("2026-04-23T12:00:00");
       const year = safeDate.getFullYear();
@@ -108,6 +121,7 @@ describe("today hooks", () => {
       data: [
         {
           id: "habit-1",
+          is_active: true,
           name: "Reading",
           start_date: "2026-04-23",
           stack_trigger: "I brush my teeth",
@@ -171,6 +185,8 @@ describe("today hooks", () => {
         consistencyRate: 2 / 3,
         formula: "After I brush my teeth, I will Read 1 page.",
         id: "habit-1",
+        isWeeklyReviewDue: true,
+        latestReviewWeekStart: null,
         name: "Reading",
         skipCount: 1,
         streak: 2,
@@ -194,6 +210,7 @@ describe("today hooks", () => {
       data: [
         {
           id: "habit-1",
+          is_active: true,
           name: "Reading",
           start_date: "2026-04-23",
           stack_trigger: "I brush my teeth",
@@ -201,6 +218,7 @@ describe("today hooks", () => {
         },
         {
           id: "habit-2",
+          is_active: true,
           name: "Meditation",
           start_date: "2026-04-23",
           stack_trigger: "I wake up",
@@ -264,6 +282,8 @@ describe("today hooks", () => {
         consistencyRate: 0,
         formula: "After I brush my teeth, I will Read 1 page.",
         id: "habit-1",
+        isWeeklyReviewDue: true,
+        latestReviewWeekStart: null,
         name: "Reading",
         skipCount: 1,
         streak: 0,
@@ -273,6 +293,8 @@ describe("today hooks", () => {
         consistencyRate: 1,
         formula: "After I wake up, I will Meditate for 1 minute.",
         id: "habit-2",
+        isWeeklyReviewDue: true,
+        latestReviewWeekStart: null,
         name: "Meditation",
         skipCount: 0,
         streak: 2,
@@ -312,6 +334,183 @@ describe("today hooks", () => {
         startDate: "2026-04-25",
       },
     ]);
+  });
+
+  it("marks an active started habit without a current-week review as due", () => {
+    mockUseEligibleHabitsQuery.mockReturnValue({
+      data: [
+        {
+          id: "habit-1",
+          is_active: true,
+          name: "Reading",
+          start_date: "2026-04-23",
+          stack_trigger: "I brush my teeth",
+          tiny_action: "Read 1 page",
+        },
+      ],
+      error: null,
+      isLoading: false,
+    });
+    mockUseQueries.mockReturnValue([
+      {
+        data: null,
+        error: null,
+        isLoading: false,
+      },
+    ]);
+
+    const result = useTodayHabits();
+
+    expect(result.habits[0]).toEqual(
+      expect.objectContaining({
+        id: "habit-1",
+        isWeeklyReviewDue: true,
+        latestReviewWeekStart: null,
+      }),
+    );
+
+    const useQueriesCall = mockUseQueries.mock.calls[0]?.[0] as {
+      queries: Array<{
+        queryFn: () => Promise<unknown>;
+        queryKey: unknown[];
+      }>;
+    };
+
+    expect(useQueriesCall.queries[0].queryKey).toEqual(
+      getLatestWeeklyReviewQueryKey("user-1", "habit-1"),
+    );
+
+    void useQueriesCall.queries[0].queryFn();
+
+    expect(mockGetLatestWeeklyReview).toHaveBeenCalledWith("user-1", "habit-1");
+  });
+
+  it("hides weekly review due state when the latest review is for the current week", () => {
+    mockUseEligibleHabitsQuery.mockReturnValue({
+      data: [
+        {
+          id: "habit-1",
+          is_active: true,
+          name: "Reading",
+          start_date: "2026-04-23",
+          stack_trigger: "I brush my teeth",
+          tiny_action: "Read 1 page",
+        },
+      ],
+      error: null,
+      isLoading: false,
+    });
+    mockUseQueries.mockReturnValue([
+      {
+        data: {
+          week_start: "2026-04-20",
+        },
+        error: null,
+        isLoading: false,
+      },
+    ]);
+
+    const result = useTodayHabits();
+
+    expect(result.habits[0]).toEqual(
+      expect.objectContaining({
+        isWeeklyReviewDue: false,
+        latestReviewWeekStart: "2026-04-20",
+      }),
+    );
+  });
+
+  it("marks weekly review due when the latest review is from a previous week", () => {
+    mockUseEligibleHabitsQuery.mockReturnValue({
+      data: [
+        {
+          id: "habit-1",
+          is_active: true,
+          name: "Reading",
+          start_date: "2026-04-23",
+          stack_trigger: "I brush my teeth",
+          tiny_action: "Read 1 page",
+        },
+      ],
+      error: null,
+      isLoading: false,
+    });
+    mockUseQueries.mockReturnValue([
+      {
+        data: {
+          week_start: "2026-04-13",
+        },
+        error: null,
+        isLoading: false,
+      },
+    ]);
+
+    const result = useTodayHabits();
+
+    expect(result.habits[0]).toEqual(
+      expect.objectContaining({
+        isWeeklyReviewDue: true,
+        latestReviewWeekStart: "2026-04-13",
+      }),
+    );
+  });
+
+  it("includes latest-review loading in Today loading state", () => {
+    mockUseEligibleHabitsQuery.mockReturnValue({
+      data: [
+        {
+          id: "habit-1",
+          is_active: true,
+          name: "Reading",
+          start_date: "2026-04-23",
+          stack_trigger: "I brush my teeth",
+          tiny_action: "Read 1 page",
+        },
+      ],
+      error: null,
+      isLoading: false,
+    });
+    mockUseQueries.mockReturnValue([
+      {
+        data: null,
+        error: null,
+        isLoading: true,
+      },
+    ]);
+
+    const result = useTodayHabits();
+
+    expect(result.isLoading).toBe(true);
+  });
+
+  it("includes latest-review errors in Today error state", () => {
+    const reviewError = new Error("review lookup failed");
+
+    mockUseEligibleHabitsQuery.mockReturnValue({
+      data: [
+        {
+          id: "habit-1",
+          is_active: true,
+          name: "Reading",
+          start_date: "2026-04-23",
+          stack_trigger: "I brush my teeth",
+          tiny_action: "Read 1 page",
+        },
+      ],
+      error: null,
+      isLoading: false,
+    });
+    mockUseQueries.mockReturnValue([
+      {
+        data: null,
+        error: reviewError,
+        isLoading: false,
+      },
+    ]);
+
+    const result = useTodayHabits();
+
+    expect(result.error).toBe(reviewError);
   });
 
   it("uses the shared device-local day and selected done status when logging today", async () => {

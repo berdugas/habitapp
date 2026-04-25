@@ -23,6 +23,21 @@ const {
   useUpsertTodayHabitStatusMutation: jest.Mock;
 };
 
+function buildTodayHabit(overrides = {}) {
+  return {
+    consistencyRate: 0,
+    formula: "After I brush my teeth, I will Read 1 page.",
+    id: "habit-1",
+    isWeeklyReviewDue: false,
+    latestReviewWeekStart: null,
+    name: "Reading",
+    skipCount: 0,
+    streak: 0,
+    todayStatus: null,
+    ...overrides,
+  };
+}
+
 describe("TodayScreen", () => {
   const mockMutate = jest.fn();
   const mockMutateAsync = jest.fn();
@@ -89,15 +104,12 @@ describe("TodayScreen", () => {
     useTodayHabits.mockReturnValue({
       error: null,
       habits: [
-        {
+        buildTodayHabit({
           consistencyRate: 2 / 3,
-          formula: "After I brush my teeth, I will Read 1 page.",
-          id: "habit-1",
-          name: "Reading",
           skipCount: 1,
           streak: 2,
           todayStatus: "done",
-        },
+        }),
       ],
       isLoading: false,
       upcomingHabits: [],
@@ -115,17 +127,7 @@ describe("TodayScreen", () => {
   it("opens detail when an eligible habit card is pressed", () => {
     useTodayHabits.mockReturnValue({
       error: null,
-      habits: [
-        {
-          consistencyRate: 0,
-          formula: "After I brush my teeth, I will Read 1 page.",
-          id: "habit-1",
-          name: "Reading",
-          skipCount: 0,
-          streak: 0,
-          todayStatus: null,
-        },
-      ],
+      habits: [buildTodayHabit()],
       isLoading: false,
       upcomingHabits: [],
     });
@@ -135,6 +137,49 @@ describe("TodayScreen", () => {
     fireEvent.press(screen.getByLabelText("Reading details"));
 
     expect(mockPush).toHaveBeenCalledWith("/(app)/habits/habit-1");
+  });
+
+  it("shows the weekly review CTA for due habits and routes to review", () => {
+    useTodayHabits.mockReturnValue({
+      error: null,
+      habits: [
+        buildTodayHabit({
+          isWeeklyReviewDue: true,
+        }),
+      ],
+      isLoading: false,
+      upcomingHabits: [],
+    });
+
+    render(<TodayScreen />);
+
+    expect(screen.getByText("Weekly review due")).toBeTruthy();
+    expect(
+      screen.getByText("Reflect on what worked and what needs adjusting."),
+    ).toBeTruthy();
+
+    fireEvent.press(screen.getByText("Start review"));
+
+    expect(mockPush).toHaveBeenCalledWith("/(app)/reviews/habit-1");
+  });
+
+  it("hides the weekly review CTA for habits reviewed this week", () => {
+    useTodayHabits.mockReturnValue({
+      error: null,
+      habits: [
+        buildTodayHabit({
+          isWeeklyReviewDue: false,
+          latestReviewWeekStart: "2026-04-20",
+        }),
+      ],
+      isLoading: false,
+      upcomingHabits: [],
+    });
+
+    render(<TodayScreen />);
+
+    expect(screen.queryByText("Weekly review due")).toBeNull();
+    expect(screen.queryByText("Start review")).toBeNull();
   });
 
   it("updates the visible progress values when the hook returns refreshed persisted data", () => {
@@ -271,6 +316,30 @@ describe("TodayScreen", () => {
       status: "skipped",
     });
     expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("keeps daily status buttons working when the weekly review CTA is present", () => {
+    useTodayHabits.mockReturnValue({
+      error: null,
+      habits: [
+        buildTodayHabit({
+          isWeeklyReviewDue: true,
+        }),
+      ],
+      isLoading: false,
+      upcomingHabits: [],
+    });
+
+    render(<TodayScreen />);
+
+    expect(screen.getByText("Weekly review due")).toBeTruthy();
+
+    fireEvent.press(screen.getByText("Done"));
+
+    expect(mockMutateAsync).toHaveBeenCalledWith({
+      habitId: "habit-1",
+      status: "done",
+    });
   });
 
   it.each([
@@ -430,6 +499,8 @@ describe("TodayScreen", () => {
     expect(screen.getByText("Meditation")).toBeTruthy();
     expect(screen.getByText(/Starts on/i)).toBeTruthy();
     expect(screen.getByText("Create another habit")).toBeTruthy();
+    expect(screen.queryByText("Weekly review due")).toBeNull();
+    expect(screen.queryByText("Start review")).toBeNull();
     expect(screen.queryByText("Done")).toBeNull();
     expect(screen.queryByText("Skipped")).toBeNull();
     expect(screen.queryByText("Missed")).toBeNull();

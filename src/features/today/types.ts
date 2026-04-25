@@ -4,6 +4,8 @@ export type TodayHabitCardData = {
   consistencyRate: number;
   formula: string;
   id: string;
+  isWeeklyReviewDue: boolean;
+  latestReviewWeekStart: string | null;
   name: string;
   skipCount: number;
   streak: number;
