@@ -153,6 +153,7 @@ describe("HabitDetailScreen", () => {
       screen.getByText("Reflect on what worked and what to adjust for this habit."),
     ).toBeTruthy();
     expect(screen.getByText("Start weekly review")).toBeTruthy();
+    expect(screen.queryByText("Suggested adjustment")).toBeNull();
     expect(screen.queryByText("Delete habit")).toBeNull();
     expect(screen.queryByText("Archive habit")).toBeNull();
     expect(screen.queryByText("Pause habit")).toBeNull();
@@ -210,10 +211,104 @@ describe("HabitDetailScreen", () => {
     expect(screen.getByText("Move the book to the table")).toBeTruthy();
     expect(screen.getByText("Yes")).toBeTruthy();
     expect(screen.getByText("No")).toBeTruthy();
+    expect(screen.getByText("Suggested adjustment")).toBeTruthy();
+    expect(screen.getByText("Reduce the friction")).toBeTruthy();
 
     fireEvent.press(screen.getByText("Update weekly review"));
 
     expect(mockPush).toHaveBeenCalledWith("/(app)/reviews/habit-1");
+  });
+
+  it("shows the tiny-action suggestion when the latest review says it was too hard", () => {
+    mockUseHabitDetail.mockReturnValue({
+      error: null,
+      formula: "After breakfast, I will Read 1 page.",
+      habit: {
+        id: "habit-1",
+        identity_statement: null,
+        is_active: true,
+        name: "Reading",
+        preferred_time_window: null,
+        reminder_enabled: false,
+        reminder_time: null,
+        stack_trigger: "breakfast",
+        start_date: "2026-04-24",
+        tiny_action: "Read 1 page",
+      },
+      isLoading: false,
+      isUpcoming: false,
+      latestReview: {
+        adjustment_note: null,
+        created_at: "2026-04-24T00:00:00.000Z",
+        habit_id: "habit-1",
+        id: "review-1",
+        tiny_action_too_hard: true,
+        trigger_worked: true,
+        updated_at: "2026-04-24T00:00:00.000Z",
+        user_id: "user-1",
+        was_hard: null,
+        week_start: "2026-04-20",
+        went_well: "Breakfast cue worked",
+      },
+      progress: {
+        consistencyRate: 1,
+        skipCount: 0,
+        streak: 2,
+        todayStatus: "done",
+      },
+      recentLogs: [],
+    });
+
+    render(<HabitDetailScreen />);
+
+    expect(screen.getByText("Suggested adjustment")).toBeTruthy();
+    expect(screen.getByText("Make it smaller next week")).toBeTruthy();
+  });
+
+  it("shows the trigger suggestion when the latest review says the trigger did not work", () => {
+    mockUseHabitDetail.mockReturnValue({
+      error: null,
+      formula: "After breakfast, I will Read 1 page.",
+      habit: {
+        id: "habit-1",
+        identity_statement: null,
+        is_active: true,
+        name: "Reading",
+        preferred_time_window: null,
+        reminder_enabled: false,
+        reminder_time: null,
+        stack_trigger: "breakfast",
+        start_date: "2026-04-24",
+        tiny_action: "Read 1 page",
+      },
+      isLoading: false,
+      isUpcoming: false,
+      latestReview: {
+        adjustment_note: null,
+        created_at: "2026-04-24T00:00:00.000Z",
+        habit_id: "habit-1",
+        id: "review-1",
+        tiny_action_too_hard: false,
+        trigger_worked: false,
+        updated_at: "2026-04-24T00:00:00.000Z",
+        user_id: "user-1",
+        was_hard: null,
+        week_start: "2026-04-20",
+        went_well: "Breakfast cue worked",
+      },
+      progress: {
+        consistencyRate: 1,
+        skipCount: 0,
+        streak: 2,
+        todayStatus: "done",
+      },
+      recentLogs: [],
+    });
+
+    render(<HabitDetailScreen />);
+
+    expect(screen.getByText("Suggested adjustment")).toBeTruthy();
+    expect(screen.getByText("Adjust your trigger")).toBeTruthy();
   });
 
   it("hides optional setup fields when they are absent", () => {

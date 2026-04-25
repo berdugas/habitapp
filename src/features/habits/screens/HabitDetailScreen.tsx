@@ -14,6 +14,7 @@ import {
   useSetHabitActiveStateMutation,
 } from "@/features/habits/hooks";
 import { normalizeHabitReminderTime } from "@/features/habits/time";
+import { getHabitAdjustmentSuggestion } from "@/features/recommendations/habitAdjustmentEngine";
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
 import { spacing } from "@/theme/spacing";
@@ -139,6 +140,14 @@ export default function HabitDetailScreen() {
       </ScrollView>
     );
   }
+
+  const adjustmentSuggestion = latestReview
+    ? getHabitAdjustmentSuggestion({
+        habit,
+        latestReview,
+        progress,
+      })
+    : null;
 
   return (
     <ScrollView
@@ -348,6 +357,20 @@ export default function HabitDetailScreen() {
         />
       </View>
 
+      {adjustmentSuggestion ? (
+        <View style={styles.suggestionCard}>
+          <Text selectable style={styles.suggestionEyebrow}>
+            Suggested adjustment
+          </Text>
+          <Text selectable style={styles.suggestionTitle}>
+            {adjustmentSuggestion.title}
+          </Text>
+          <Text selectable style={styles.suggestionBody}>
+            {adjustmentSuggestion.body}
+          </Text>
+        </View>
+      ) : null}
+
       <View style={styles.actions}>
         {setHabitActiveStateMutation.error ? (
           <ErrorState message={getUpdateHabitActiveStateErrorMessage()} />
@@ -506,6 +529,30 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 18,
     fontWeight: "600",
+  },
+  suggestionBody: {
+    color: colors.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  suggestionCard: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: spacing.sm,
+    padding: spacing.xl,
+  },
+  suggestionEyebrow: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  suggestionTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "700",
   },
   title: {
     color: colors.text,
