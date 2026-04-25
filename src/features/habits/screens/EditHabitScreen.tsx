@@ -56,6 +56,14 @@ export default function EditHabitScreen() {
   const [rewriteDraft, setRewriteDraft] =
     useState<GenerateHabitRewriteResponse | null>(null);
   const [rewriteError, setRewriteError] = useState<string | null>(null);
+  const hasGeneratedRewrite = Boolean(rewriteDraft);
+  const rewriteButtonLabel = generateRewriteMutation.isPending
+    ? "Generating rewrite..."
+    : rewriteError
+      ? "Try again"
+      : hasGeneratedRewrite
+        ? "Generate another rewrite"
+        : "Generate rewrite";
 
   const formPayload = {
     identityStatement,
@@ -198,20 +206,20 @@ export default function EditHabitScreen() {
           <Text selectable style={styles.suggestionReason}>
             {suggestionGuidance.reason}
           </Text>
+          <Text selectable style={styles.aiRewriteHelper}>
+            AI can suggest a rewrite, but you stay in control. It will not change
+            your habit unless you edit and save it.
+          </Text>
           <SecondaryButton
             disabled={generateRewriteMutation.isPending}
-            label={
-              generateRewriteMutation.isPending
-                ? "Generating rewrite..."
-                : "Generate rewrite"
-            }
+            label={rewriteButtonLabel}
             onPress={() => void handleGenerateRewrite()}
           />
           {rewriteError ? <ErrorState message={rewriteError} /> : null}
           {rewriteDraft ? (
             <View style={styles.aiRewriteCard}>
               <Text selectable style={styles.aiRewriteTitle}>
-                AI suggested rewrite
+                AI rewrite idea
               </Text>
               <Text selectable style={styles.aiRewriteLabel}>
                 Trigger
@@ -232,6 +240,10 @@ export default function EditHabitScreen() {
               </Text>
               <Text selectable style={styles.aiRewriteValue}>
                 {rewriteDraft.explanation}
+              </Text>
+              <Text selectable style={styles.aiRewriteNote}>
+                Use this as inspiration. To use it, manually update the fields
+                below and save.
               </Text>
             </View>
           ) : null}
@@ -319,11 +331,21 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     padding: spacing.lg,
   },
+  aiRewriteHelper: {
+    color: colors.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+  },
   aiRewriteLabel: {
     color: colors.accent,
     fontSize: 12,
     fontWeight: "700",
     textTransform: "uppercase",
+  },
+  aiRewriteNote: {
+    color: colors.textMuted,
+    fontSize: 13,
+    lineHeight: 19,
   },
   aiRewriteTitle: {
     color: colors.text,

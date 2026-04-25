@@ -11,6 +11,10 @@ const mockMutateAsync = jest.fn();
 const mockGenerateRewriteMutateAsync = jest.fn();
 const rewriteErrorCopy =
   "We couldn't generate a rewrite right now. You can still edit this habit manually.";
+const aiRewriteHelperCopy =
+  "AI can suggest a rewrite, but you stay in control. It will not change your habit unless you edit and save it.";
+const aiRewriteInspirationCopy =
+  "Use this as inspiration. To use it, manually update the fields below and save.";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -123,6 +127,7 @@ describe("EditHabitScreen", () => {
     expect(screen.getByText("Make the action smaller")).toBeTruthy();
     expect(screen.getByText("Why this suggestion")).toBeTruthy();
     expect(screen.getByText("Suggested draft")).toBeTruthy();
+    expect(screen.getByText(aiRewriteHelperCopy)).toBeTruthy();
     expect(screen.getByText("Generate rewrite")).toBeTruthy();
     expect(
       screen.getByText(
@@ -153,6 +158,7 @@ describe("EditHabitScreen", () => {
     expect(screen.getByText("Choose a clearer trigger")).toBeTruthy();
     expect(screen.getByText("Why this suggestion")).toBeTruthy();
     expect(screen.getByText("Suggested draft")).toBeTruthy();
+    expect(screen.getByText(aiRewriteHelperCopy)).toBeTruthy();
     expect(screen.getByText("Generate rewrite")).toBeTruthy();
     expect(
       screen.getByText(
@@ -182,7 +188,9 @@ describe("EditHabitScreen", () => {
     expect(screen.queryByText("Make the action smaller")).toBeNull();
     expect(screen.queryByText("Why this suggestion")).toBeNull();
     expect(screen.queryByText("Suggested draft")).toBeNull();
+    expect(screen.queryByText(aiRewriteHelperCopy)).toBeNull();
     expect(screen.queryByText("Generate rewrite")).toBeNull();
+    expect(screen.queryByText("AI rewrite idea")).toBeNull();
     expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
   });
 
@@ -231,9 +239,10 @@ describe("EditHabitScreen", () => {
     fireEvent.press(screen.getByText("Generate rewrite"));
 
     await waitFor(() => {
-      expect(screen.getByText("AI suggested rewrite")).toBeTruthy();
+      expect(screen.getByText("AI rewrite idea")).toBeTruthy();
     });
 
+    expect(screen.getByText("Generate another rewrite")).toBeTruthy();
     expect(screen.getByText("Trigger")).toBeTruthy();
     expect(screen.getByText("After breakfast")).toBeTruthy();
     expect(screen.getAllByText("Tiny action").length).toBeGreaterThan(1);
@@ -244,6 +253,7 @@ describe("EditHabitScreen", () => {
         "This keeps the action small and tied to a clear daily moment.",
       ),
     ).toBeTruthy();
+    expect(screen.getByText(aiRewriteInspirationCopy)).toBeTruthy();
     expect(screen.getByDisplayValue("After I brush my teeth")).toBeTruthy();
     expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
   });
@@ -266,6 +276,7 @@ describe("EditHabitScreen", () => {
     await waitFor(() => {
       expect(screen.getByText("No trigger change suggested")).toBeTruthy();
     });
+    expect(screen.getByText("Generate another rewrite")).toBeTruthy();
     expect(screen.getByText("No tiny action change suggested")).toBeTruthy();
     expect(screen.getByText("This setup is workable for another week.")).toBeTruthy();
   });
@@ -284,6 +295,7 @@ describe("EditHabitScreen", () => {
     await waitFor(() => {
       expect(screen.getByText(rewriteErrorCopy)).toBeTruthy();
     });
+    expect(screen.getByText("Try again")).toBeTruthy();
     expect(screen.getByDisplayValue("After I brush my teeth")).toBeTruthy();
     expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
   });
@@ -304,6 +316,80 @@ describe("EditHabitScreen", () => {
     await waitFor(() => {
       expect(screen.getByText(rewriteErrorCopy)).toBeTruthy();
     });
+    expect(screen.getByText("Try again")).toBeTruthy();
+  });
+
+  it("generating another rewrite replaces the previous rewrite", async () => {
+    mockUseLocalSearchParams.mockReturnValue({
+      habitId: "habit-1",
+      suggestionType: "change_trigger",
+    });
+    mockGenerateRewriteMutateAsync
+      .mockResolvedValueOnce({
+        explanation: "The first idea uses a morning cue.",
+        suggestedStackTrigger: "After breakfast",
+        suggestedTinyAction: "Read one paragraph",
+      })
+      .mockResolvedValueOnce({
+        explanation: "The second idea uses an evening cue.",
+        suggestedStackTrigger: "After dinner",
+        suggestedTinyAction: "Read one sentence",
+      });
+
+    render(<EditHabitScreen />);
+
+    fireEvent.press(screen.getByText("Generate rewrite"));
+
+    await waitFor(() => {
+      expect(screen.getByText("After breakfast")).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText("Generate another rewrite"));
+
+    await waitFor(() => {
+      expect(screen.getByText("After dinner")).toBeTruthy();
+    });
+
+    expect(screen.getByText("Read one sentence")).toBeTruthy();
+    expect(screen.getByText("The second idea uses an evening cue.")).toBeTruthy();
+    expect(screen.queryByText("After breakfast")).toBeNull();
+    expect(screen.queryByText("Read one paragraph")).toBeNull();
+    expect(screen.queryByText("The first idea uses a morning cue.")).toBeNull();
+  });
+
+  it("failed retry hides the stale rewrite and keeps form fields unchanged", async () => {
+    mockUseLocalSearchParams.mockReturnValue({
+      habitId: "habit-1",
+      suggestionType: "change_trigger",
+    });
+    mockGenerateRewriteMutateAsync
+      .mockResolvedValueOnce({
+        explanation: "The first idea uses a morning cue.",
+        suggestedStackTrigger: "After breakfast",
+        suggestedTinyAction: "Read one paragraph",
+      })
+      .mockRejectedValueOnce(new Error("network"));
+
+    render(<EditHabitScreen />);
+
+    fireEvent.press(screen.getByText("Generate rewrite"));
+
+    await waitFor(() => {
+      expect(screen.getByText("After breakfast")).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText("Generate another rewrite"));
+
+    await waitFor(() => {
+      expect(screen.getByText(rewriteErrorCopy)).toBeTruthy();
+    });
+
+    expect(screen.getByText("Try again")).toBeTruthy();
+    expect(screen.queryByText("After breakfast")).toBeNull();
+    expect(screen.queryByText("Read one paragraph")).toBeNull();
+    expect(screen.queryByText("The first idea uses a morning cue.")).toBeNull();
+    expect(screen.getByDisplayValue("After I brush my teeth")).toBeTruthy();
+    expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
   });
 
   it("normalizes database reminder times with seconds before showing the form", () => {
