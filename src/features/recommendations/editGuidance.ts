@@ -16,7 +16,7 @@ const HABIT_SUGGESTION_EDIT_GUIDANCE_COPY: Record<
 > = {
   change_trigger: {
     body: "Try attaching this habit to a specific moment that already happens every day.",
-    draftBody: 'Look at your Stack trigger field and make it more specific. For example, use a clear moment like "After breakfast" or "After I brush my teeth."',
+    draftBody: "Look at your Stack trigger field and make it more specific. Try a clear moment like after breakfast or after brushing your teeth.",
     draftTitle: "Suggested draft",
     title: "Choose a clearer trigger",
   },

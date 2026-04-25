@@ -140,7 +140,7 @@ describe("EditHabitScreen", () => {
     ).toBeTruthy();
     expect(
       screen.getByText(
-        'Look at your Stack trigger field and make it more specific. For example, use a clear moment like "After breakfast" or "After I brush my teeth."',
+        "Look at your Stack trigger field and make it more specific. Try a clear moment like after breakfast or after brushing your teeth.",
       ),
     ).toBeTruthy();
     expect(
