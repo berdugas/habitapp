@@ -8,6 +8,14 @@ export type HabitAdjustmentSuggestionType =
   | "plan_for_obstacle"
   | "keep_going";
 
+export const HABIT_ADJUSTMENT_SUGGESTION_TYPES: HabitAdjustmentSuggestionType[] = [
+  "make_tiny_action_smaller",
+  "change_trigger",
+  "reduce_friction",
+  "plan_for_obstacle",
+  "keep_going",
+];
+
 export type HabitAdjustmentSuggestion = {
   body: string;
   reason: string;
@@ -24,3 +32,17 @@ export type HabitAdjustmentInput = {
     streak: number;
   };
 };
+
+export function normalizeHabitAdjustmentSuggestionType(
+  suggestionType: string | string[] | undefined,
+): HabitAdjustmentSuggestionType | null {
+  const normalized = Array.isArray(suggestionType)
+    ? suggestionType[0]
+    : suggestionType;
+
+  return HABIT_ADJUSTMENT_SUGGESTION_TYPES.includes(
+    normalized as HabitAdjustmentSuggestionType,
+  )
+    ? (normalized as HabitAdjustmentSuggestionType)
+    : null;
+}

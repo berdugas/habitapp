@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 
 import { PrimaryButton } from "@/components/buttons/PrimaryButton";
+import { SecondaryButton } from "@/components/buttons/SecondaryButton";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { LoadingState } from "@/components/feedback/LoadingState";
 import { TextField } from "@/components/forms/TextField";
@@ -17,13 +18,18 @@ import {
   validateHabitSetupPayload,
 } from "@/features/habits/validators";
 import { getHabitSuggestionEditGuidance } from "@/features/recommendations/editGuidance";
+import { useGenerateHabitRewriteMutation } from "@/features/recommendations/hooks";
+import { normalizeHabitAdjustmentSuggestionType } from "@/features/recommendations/types";
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
 import { spacing } from "@/theme/spacing";
 import {
+  getGenerateHabitRewriteErrorMessage,
   getLoadHabitDetailErrorMessage,
   getUpdateHabitErrorMessage,
 } from "@/utils/userFacingErrors";
+
+import type { GenerateHabitRewriteResponse } from "@/features/recommendations/aiRewriteApi";
 
 export default function EditHabitScreen() {
   const { habitId, suggestionType } = useLocalSearchParams<{
@@ -32,8 +38,11 @@ export default function EditHabitScreen() {
   }>();
   const ownedHabitQuery = useOwnedHabitQuery(habitId);
   const updateHabitMutation = useUpdateHabitMutation();
+  const generateRewriteMutation = useGenerateHabitRewriteMutation();
   const hasHydratedFormRef = useRef(false);
   const submitLockRef = useRef(false);
+  const normalizedSuggestionType =
+    normalizeHabitAdjustmentSuggestionType(suggestionType);
   const suggestionGuidance = getHabitSuggestionEditGuidance(suggestionType);
 
   const [name, setName] = useState("");
@@ -44,6 +53,9 @@ export default function EditHabitScreen() {
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderTime, setReminderTime] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [rewriteDraft, setRewriteDraft] =
+    useState<GenerateHabitRewriteResponse | null>(null);
+  const [rewriteError, setRewriteError] = useState<string | null>(null);
 
   const formPayload = {
     identityStatement,
@@ -106,6 +118,29 @@ export default function EditHabitScreen() {
     }
   }
 
+  async function handleGenerateRewrite() {
+    if (
+      generateRewriteMutation.isPending ||
+      !ownedHabitQuery.data ||
+      !normalizedSuggestionType
+    ) {
+      return;
+    }
+
+    setRewriteDraft(null);
+    setRewriteError(null);
+
+    try {
+      const response = await generateRewriteMutation.mutateAsync({
+        habitId: ownedHabitQuery.data.id,
+        suggestionType: normalizedSuggestionType,
+      });
+      setRewriteDraft(response);
+    } catch {
+      setRewriteError(getGenerateHabitRewriteErrorMessage());
+    }
+  }
+
   const preview =
     normalizedPayload.stackTrigger && normalizedPayload.tinyAction
       ? `After ${normalizedPayload.stackTrigger}, I will ${normalizedPayload.tinyAction}.`
@@ -163,6 +198,43 @@ export default function EditHabitScreen() {
           <Text selectable style={styles.suggestionReason}>
             {suggestionGuidance.reason}
           </Text>
+          <SecondaryButton
+            disabled={generateRewriteMutation.isPending}
+            label={
+              generateRewriteMutation.isPending
+                ? "Generating rewrite..."
+                : "Generate rewrite"
+            }
+            onPress={() => void handleGenerateRewrite()}
+          />
+          {rewriteError ? <ErrorState message={rewriteError} /> : null}
+          {rewriteDraft ? (
+            <View style={styles.aiRewriteCard}>
+              <Text selectable style={styles.aiRewriteTitle}>
+                AI suggested rewrite
+              </Text>
+              <Text selectable style={styles.aiRewriteLabel}>
+                Trigger
+              </Text>
+              <Text selectable style={styles.aiRewriteValue}>
+                {rewriteDraft.suggestedStackTrigger ??
+                  "No trigger change suggested"}
+              </Text>
+              <Text selectable style={styles.aiRewriteLabel}>
+                Tiny action
+              </Text>
+              <Text selectable style={styles.aiRewriteValue}>
+                {rewriteDraft.suggestedTinyAction ??
+                  "No tiny action change suggested"}
+              </Text>
+              <Text selectable style={styles.aiRewriteLabel}>
+                Why
+              </Text>
+              <Text selectable style={styles.aiRewriteValue}>
+                {rewriteDraft.explanation}
+              </Text>
+            </View>
+          ) : null}
         </View>
       ) : null}
 
@@ -240,6 +312,28 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.xl,
     padding: spacing.xl,
+  },
+  aiRewriteCard: {
+    backgroundColor: colors.accentSoft,
+    borderRadius: radius.md,
+    gap: spacing.sm,
+    padding: spacing.lg,
+  },
+  aiRewriteLabel: {
+    color: colors.accent,
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  aiRewriteTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  aiRewriteValue: {
+    color: colors.text,
+    fontSize: 14,
+    lineHeight: 20,
   },
   formCard: {
     backgroundColor: colors.surface,

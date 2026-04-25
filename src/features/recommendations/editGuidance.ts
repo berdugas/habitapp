@@ -1,4 +1,5 @@
 import { HABIT_ADJUSTMENT_SUGGESTIONS } from "@/features/recommendations/copy";
+import { normalizeHabitAdjustmentSuggestionType } from "@/features/recommendations/types";
 
 import type { HabitAdjustmentSuggestionType } from "@/features/recommendations/types";
 
@@ -75,19 +76,7 @@ export const HABIT_SUGGESTION_EDIT_GUIDANCE: Record<
 export function getHabitSuggestionEditGuidance(
   suggestionType: string | string[] | undefined,
 ): HabitSuggestionEditGuidance | null {
-  const normalized = Array.isArray(suggestionType)
-    ? suggestionType[0]
-    : suggestionType;
+  const normalized = normalizeHabitAdjustmentSuggestionType(suggestionType);
 
-  if (
-    normalized === "make_tiny_action_smaller" ||
-    normalized === "change_trigger" ||
-    normalized === "reduce_friction" ||
-    normalized === "plan_for_obstacle" ||
-    normalized === "keep_going"
-  ) {
-    return HABIT_SUGGESTION_EDIT_GUIDANCE[normalized];
-  }
-
-  return null;
+  return normalized ? HABIT_SUGGESTION_EDIT_GUIDANCE[normalized] : null;
 }

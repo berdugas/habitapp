@@ -97,3 +97,7 @@ export function getUpdateHabitErrorMessage() {
 export function getUpdateHabitActiveStateErrorMessage() {
   return "We couldn't update this habit right now. Try again.";
 }
+
+export function getGenerateHabitRewriteErrorMessage() {
+  return "We couldn't generate a rewrite right now. You can still edit this habit manually.";
+}
