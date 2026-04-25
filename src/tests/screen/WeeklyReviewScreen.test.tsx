@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react-native";
 
 import WeeklyReviewScreen from "@/features/reviews/screens/WeeklyReviewScreen";
 
@@ -32,6 +38,10 @@ jest.mock("@/utils/dates", () => ({
 }));
 
 describe("WeeklyReviewScreen", () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseLocalSearchParams.mockReturnValue({
@@ -82,7 +92,9 @@ describe("WeeklyReviewScreen", () => {
     render(<WeeklyReviewScreen />);
 
     expect(
-      screen.getByText("We couldn't load this habit right now. Try again."),
+      screen.getByText(
+        "We couldn't load this weekly review right now. Try again.",
+      ),
     ).toBeTruthy();
   });
 
@@ -97,6 +109,9 @@ describe("WeeklyReviewScreen", () => {
     expect(screen.getByText("What was hard this week?")).toBeTruthy();
     expect(screen.getByText("Did your trigger work?")).toBeTruthy();
     expect(screen.getByText("Was the tiny action too hard?")).toBeTruthy();
+    expect(
+      screen.getByText("What small adjustment do you want to try next week?"),
+    ).toBeTruthy();
   });
 
   it("prefills an existing current-week review", () => {
@@ -155,7 +170,9 @@ describe("WeeklyReviewScreen", () => {
     });
   });
 
-  it("saves trimmed values and preserves true, false, and null answers", async () => {
+  it("saves trimmed values and returns to Habit Detail after a saved state", async () => {
+    jest.useFakeTimers();
+
     render(<WeeklyReviewScreen />);
 
     fireEvent.changeText(
@@ -185,7 +202,112 @@ describe("WeeklyReviewScreen", () => {
         wentWell: "Breakfast cue worked",
       });
     });
+    await waitFor(() => {
+      expect(screen.getByText("Review saved")).toBeTruthy();
+    });
+    expect(
+      screen.getByText(
+        "Your habit reflection has been updated for this week.",
+      ),
+    ).toBeTruthy();
+    expect(mockReplace).not.toHaveBeenCalled();
+
+    act(() => {
+      jest.advanceTimersByTime(650);
+    });
+
     expect(mockReplace).toHaveBeenCalledWith("/(app)/habits/habit-1");
+  });
+
+  it("returns to Today after saving when returnTo is today", async () => {
+    jest.useFakeTimers();
+    mockUseLocalSearchParams.mockReturnValue({
+      habitId: "habit-1",
+      returnTo: "today",
+    });
+
+    render(<WeeklyReviewScreen />);
+
+    fireEvent.changeText(
+      screen.getByPlaceholderText("The moment that felt easiest"),
+      "I showed up",
+    );
+    fireEvent.press(screen.getByText("Save weekly review"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Review saved")).toBeTruthy();
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(650);
+    });
+
+    expect(mockReplace).toHaveBeenCalledWith("/(app)/(tabs)/today");
+  });
+
+  it("falls back to Habit Detail for unrecognized returnTo values", async () => {
+    jest.useFakeTimers();
+    mockUseLocalSearchParams.mockReturnValue({
+      habitId: "habit-1",
+      returnTo: "settings",
+    });
+
+    render(<WeeklyReviewScreen />);
+
+    fireEvent.changeText(
+      screen.getByPlaceholderText("The moment that felt easiest"),
+      "I showed up",
+    );
+    fireEvent.press(screen.getByText("Save weekly review"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Review saved")).toBeTruthy();
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(650);
+    });
+
+    expect(mockReplace).toHaveBeenCalledWith("/(app)/habits/habit-1");
+  });
+
+  it("updates a prefilled current-week review through the same save payload", async () => {
+    jest.useFakeTimers();
+    mockUseCurrentWeeklyReviewQuery.mockReturnValue({
+      data: {
+        adjustment_note: "Move the book to the table",
+        habit_id: "habit-1",
+        id: "review-1",
+        tiny_action_too_hard: false,
+        trigger_worked: true,
+        user_id: "user-1",
+        was_hard: "Rushed mornings",
+        week_start: "2026-04-20",
+        went_well: "Breakfast cue worked",
+      },
+      error: null,
+      isLoading: false,
+    });
+
+    render(<WeeklyReviewScreen />);
+
+    fireEvent.changeText(
+      screen.getByPlaceholderText("One small change for next week"),
+      "Keep the book by breakfast",
+    );
+    fireEvent.press(screen.getByText("Save weekly review"));
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        adjustmentNote: "Keep the book by breakfast",
+        habitId: "habit-1",
+        tinyActionTooHard: false,
+        triggerWorked: true,
+        wasHard: "Rushed mornings",
+        weekStart: "2026-04-20",
+        wentWell: "Breakfast cue worked",
+      });
+    });
   });
 
   it("preserves input when save fails", async () => {

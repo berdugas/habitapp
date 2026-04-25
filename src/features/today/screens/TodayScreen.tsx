@@ -62,7 +62,13 @@ export default function TodayScreen() {
   }
 
   function openWeeklyReview(habitId: string) {
-    router.push(`/(app)/reviews/${habitId}`);
+    router.push({
+      params: {
+        habitId,
+        returnTo: "today",
+      },
+      pathname: "/(app)/reviews/[habitId]",
+    });
   }
 
   async function handleStatusPress(habitId: string, status: HabitLogStatus) {

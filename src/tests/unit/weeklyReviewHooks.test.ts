@@ -1,6 +1,7 @@
 const mockUseMutation = jest.fn();
 const mockUseQuery = jest.fn();
 const mockInvalidateQueries = jest.fn();
+const mockSetQueryData = jest.fn();
 const mockUseAuthSession = jest.fn();
 const mockGetLatestWeeklyReview = jest.fn();
 const mockGetWeeklyReviewForWeek = jest.fn();
@@ -13,6 +14,8 @@ jest.mock("@tanstack/react-query", () => ({
   useQuery: (options: unknown) => mockUseQuery(options),
   useQueryClient: () => ({
     invalidateQueries: (options: unknown) => mockInvalidateQueries(options),
+    setQueryData: (queryKey: unknown, data: unknown) =>
+      mockSetQueryData(queryKey, data),
   }),
 }));
 
@@ -72,6 +75,7 @@ describe("weekly review hooks", () => {
     mockUseQuery.mockImplementation((options: unknown) => options);
     mockGetWeekStartDateString.mockReturnValue("2026-04-20");
     mockInvalidateQueries.mockResolvedValue(undefined);
+    mockSetQueryData.mockReturnValue(undefined);
     mockUpsertWeeklyReview.mockResolvedValue({
       id: "review-1",
     });
@@ -136,7 +140,7 @@ describe("weekly review hooks", () => {
     expect(mockUpsertWeeklyReview).not.toHaveBeenCalled();
   });
 
-  it("calls the API and invalidates weekly review plus habit detail queries", async () => {
+  it("calls the API, caches the saved review, and invalidates dependent queries", async () => {
     useUpsertWeeklyReviewMutation();
 
     const mutationOptions = mockUseMutation.mock.calls[0]?.[0] as {
@@ -155,12 +159,32 @@ describe("weekly review hooks", () => {
       weekStart: "2026-04-20",
       wentWell: "Breakfast worked",
     };
+    const savedReview = {
+      adjustment_note: "Try earlier",
+      habit_id: "habit-1",
+      id: "review-1",
+      tiny_action_too_hard: false,
+      trigger_worked: true,
+      user_id: "user-1",
+      was_hard: null,
+      week_start: "2026-04-20",
+      went_well: "Breakfast worked",
+    };
 
     await mutationOptions.mutationFn(payload);
 
     expect(mockUpsertWeeklyReview).toHaveBeenCalledWith("user-1", payload);
 
-    await mutationOptions.onSuccess({}, payload);
+    await mutationOptions.onSuccess(savedReview, payload);
+
+    expect(mockSetQueryData).toHaveBeenCalledWith(
+      getLatestWeeklyReviewQueryKey("user-1", "habit-1"),
+      savedReview,
+    );
+    expect(mockSetQueryData).toHaveBeenCalledWith(
+      getCurrentWeeklyReviewQueryKey("user-1", "habit-1", "2026-04-20"),
+      savedReview,
+    );
 
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
       queryKey: getLatestWeeklyReviewQueryKey("user-1", "habit-1"),

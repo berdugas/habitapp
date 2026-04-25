@@ -74,6 +74,10 @@ export function getLoadHabitDetailErrorMessage() {
   return "We couldn't load this habit right now. Try again.";
 }
 
+export function getLoadWeeklyReviewErrorMessage() {
+  return "We couldn't load this weekly review right now. Try again.";
+}
+
 export function getLoadInactiveHabitsErrorMessage() {
   return "We couldn't load inactive habits right now. Try again.";
 }

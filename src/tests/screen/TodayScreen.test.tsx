@@ -160,7 +160,13 @@ describe("TodayScreen", () => {
 
     fireEvent.press(screen.getByText("Start review"));
 
-    expect(mockPush).toHaveBeenCalledWith("/(app)/reviews/habit-1");
+    expect(mockPush).toHaveBeenCalledWith({
+      params: {
+        habitId: "habit-1",
+        returnTo: "today",
+      },
+      pathname: "/(app)/reviews/[habitId]",
+    });
   });
 
   it("hides the weekly review CTA for habits reviewed this week", () => {

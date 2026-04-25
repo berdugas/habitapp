@@ -16,7 +16,7 @@ import { radius } from "@/theme/radius";
 import { spacing } from "@/theme/spacing";
 import { getWeekStartDateString } from "@/utils/dates";
 import {
-  getLoadHabitDetailErrorMessage,
+  getLoadWeeklyReviewErrorMessage,
   getSaveWeeklyReviewErrorMessage,
 } from "@/utils/userFacingErrors";
 
@@ -26,12 +26,20 @@ type NullableBooleanFieldProps = {
   value: boolean | null;
 };
 
+const REVIEW_SAVE_SUCCESS_DELAY_MS = 650;
+
 function normalizeHabitId(habitId: string | string[] | undefined) {
   if (Array.isArray(habitId)) {
     return habitId[0];
   }
 
   return habitId;
+}
+
+function normalizeReturnTo(value: string | string[] | undefined) {
+  const normalized = Array.isArray(value) ? value[0] : value;
+
+  return normalized === "today" ? "today" : "habitDetail";
 }
 
 function NullableBooleanField({
@@ -83,15 +91,23 @@ function NullableBooleanField({
 }
 
 export default function WeeklyReviewScreen() {
-  const { habitId: habitIdParam } = useLocalSearchParams<{
+  const {
+    habitId: habitIdParam,
+    returnTo: returnToParam,
+  } = useLocalSearchParams<{
     habitId?: string | string[];
+    returnTo?: string | string[];
   }>();
   const habitId = normalizeHabitId(habitIdParam);
+  const returnTo = normalizeReturnTo(returnToParam);
   const weekStart = getWeekStartDateString();
   const habitQuery = useOwnedHabitQuery(habitId);
   const currentReviewQuery = useCurrentWeeklyReviewQuery(habitId);
   const upsertWeeklyReviewMutation = useUpsertWeeklyReviewMutation();
   const saveSubmitLockRef = useRef(false);
+  const successNavigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const [wentWell, setWentWell] = useState("");
   const [wasHard, setWasHard] = useState("");
@@ -102,6 +118,15 @@ export default function WeeklyReviewScreen() {
   );
   const [validationError, setValidationError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState(false);
+  const [reviewSaved, setReviewSaved] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (successNavigationTimeoutRef.current) {
+        clearTimeout(successNavigationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const review = currentReviewQuery.data;
@@ -131,13 +156,15 @@ export default function WeeklyReviewScreen() {
     if (
       !habitId ||
       saveSubmitLockRef.current ||
-      upsertWeeklyReviewMutation.isPending
+      upsertWeeklyReviewMutation.isPending ||
+      reviewSaved
     ) {
       return;
     }
 
     setValidationError(null);
     setSaveError(false);
+    setReviewSaved(false);
 
     if (!hasAtLeastOneReflection()) {
       setValidationError("Add at least one reflection before saving.");
@@ -156,10 +183,16 @@ export default function WeeklyReviewScreen() {
         weekStart,
         wentWell: wentWell.trim(),
       });
-      router.replace(`/(app)/habits/${habitId}`);
+      setReviewSaved(true);
+
+      const destination =
+        returnTo === "today" ? "/(app)/(tabs)/today" : `/(app)/habits/${habitId}`;
+
+      successNavigationTimeoutRef.current = setTimeout(() => {
+        router.replace(destination);
+      }, REVIEW_SAVE_SUCCESS_DELAY_MS);
     } catch {
       setSaveError(true);
-    } finally {
       saveSubmitLockRef.current = false;
     }
   }
@@ -175,10 +208,12 @@ export default function WeeklyReviewScreen() {
         contentInsetAdjustmentBehavior="automatic"
         style={styles.screen}
       >
-        <ErrorState message={getLoadHabitDetailErrorMessage()} />
+        <ErrorState message={getLoadWeeklyReviewErrorMessage()} />
       </ScrollView>
     );
   }
+
+  const isSaveBlocked = upsertWeeklyReviewMutation.isPending || reviewSaved;
 
   return (
     <ScrollView
@@ -208,6 +243,16 @@ export default function WeeklyReviewScreen() {
       {saveError || upsertWeeklyReviewMutation.error ? (
         <ErrorState message={getSaveWeeklyReviewErrorMessage()} />
       ) : null}
+      {reviewSaved ? (
+        <View style={styles.successCard}>
+          <Text selectable style={styles.successTitle}>
+            Review saved
+          </Text>
+          <Text selectable style={styles.successBody}>
+            Your habit reflection has been updated for this week.
+          </Text>
+        </View>
+      ) : null}
 
       <View style={styles.card}>
         <TextField
@@ -235,7 +280,7 @@ export default function WeeklyReviewScreen() {
           value={tinyActionTooHard}
         />
         <TextField
-          label="What adjustment do you want to try next week?"
+          label="What small adjustment do you want to try next week?"
           multiline
           onChangeText={setAdjustmentNote}
           placeholder="One small change for next week"
@@ -244,7 +289,7 @@ export default function WeeklyReviewScreen() {
       </View>
 
       <PrimaryButton
-        disabled={upsertWeeklyReviewMutation.isPending}
+        disabled={isSaveBlocked}
         label={
           upsertWeeklyReviewMutation.isPending
             ? "Saving review..."
@@ -298,6 +343,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
+  },
+  successBody: {
+    color: colors.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  successCard: {
+    backgroundColor: colors.surface,
+    borderColor: colors.success,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: spacing.xs,
+    padding: spacing.lg,
+  },
+  successTitle: {
+    color: colors.success,
+    fontSize: 16,
+    fontWeight: "700",
   },
   segmentButton: {
     backgroundColor: colors.background,

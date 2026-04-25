@@ -65,20 +65,29 @@ export function useUpsertWeeklyReviewMutation() {
 
       return upsertWeeklyReview(user.id, payload);
     },
-    onSuccess: async (_savedReview, payload) => {
+    onSuccess: async (savedReview, payload) => {
       if (!user?.id) {
         return;
       }
 
+      const latestReviewKey = getLatestWeeklyReviewQueryKey(
+        user.id,
+        payload.habitId,
+      );
+      const currentReviewKey = getCurrentWeeklyReviewQueryKey(
+        user.id,
+        payload.habitId,
+        payload.weekStart,
+      );
+
+      queryClient.setQueryData(latestReviewKey, savedReview);
+      queryClient.setQueryData(currentReviewKey, savedReview);
+
       await queryClient.invalidateQueries({
-        queryKey: getLatestWeeklyReviewQueryKey(user.id, payload.habitId),
+        queryKey: latestReviewKey,
       });
       await queryClient.invalidateQueries({
-        queryKey: getCurrentWeeklyReviewQueryKey(
-          user.id,
-          payload.habitId,
-          payload.weekStart,
-        ),
+        queryKey: currentReviewKey,
       });
       await queryClient.invalidateQueries({
         queryKey: getHabitDetailQueryKey(user.id, payload.habitId),
