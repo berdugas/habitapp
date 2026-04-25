@@ -29,7 +29,7 @@ type NullableBooleanFieldProps = {
   value: boolean | null;
 };
 
-const REVIEW_SAVE_SUCCESS_DELAY_MS = 650;
+const REVIEW_SAVE_SUCCESS_DELAY_MS = 1500;
 
 function normalizeHabitId(habitId: string | string[] | undefined) {
   if (Array.isArray(habitId)) {
@@ -258,30 +258,6 @@ export default function WeeklyReviewScreen() {
       {saveError || upsertWeeklyReviewMutation.error ? (
         <ErrorState message={getSaveWeeklyReviewErrorMessage()} />
       ) : null}
-      {reviewSaved ? (
-        <View style={styles.successCard}>
-          <Text selectable style={styles.successTitle}>
-            Review saved
-          </Text>
-          <Text selectable style={styles.successBody}>
-            Your habit reflection has been updated for this week.
-          </Text>
-        </View>
-      ) : null}
-      {adjustmentSuggestion ? (
-        <View style={styles.suggestionCard}>
-          <Text selectable style={styles.suggestionEyebrow}>
-            Suggested adjustment
-          </Text>
-          <Text selectable style={styles.suggestionTitle}>
-            {adjustmentSuggestion.title}
-          </Text>
-          <Text selectable style={styles.suggestionBody}>
-            {adjustmentSuggestion.body}
-          </Text>
-        </View>
-      ) : null}
-
       <View style={styles.card}>
         <TextField
           label="What went well this week?"
@@ -315,6 +291,30 @@ export default function WeeklyReviewScreen() {
           value={adjustmentNote}
         />
       </View>
+
+      {reviewSaved ? (
+        <View style={styles.successCard}>
+          <Text selectable style={styles.successTitle}>
+            Review saved
+          </Text>
+          <Text selectable style={styles.successBody}>
+            Your habit reflection has been updated for this week.
+          </Text>
+        </View>
+      ) : null}
+      {adjustmentSuggestion ? (
+        <View style={styles.suggestionCard}>
+          <Text selectable style={styles.suggestionEyebrow}>
+            Suggested adjustment
+          </Text>
+          <Text selectable style={styles.suggestionTitle}>
+            {adjustmentSuggestion.title}
+          </Text>
+          <Text selectable style={styles.suggestionBody}>
+            {adjustmentSuggestion.body}
+          </Text>
+        </View>
+      ) : null}
 
       <PrimaryButton
         disabled={isSaveBlocked}

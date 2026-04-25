@@ -243,7 +243,7 @@ describe("WeeklyReviewScreen", () => {
     expect(mockReplace).not.toHaveBeenCalled();
 
     act(() => {
-      jest.advanceTimersByTime(650);
+      jest.advanceTimersByTime(1500);
     });
 
     expect(mockReplace).toHaveBeenCalledWith("/(app)/habits/habit-1");
@@ -269,7 +269,7 @@ describe("WeeklyReviewScreen", () => {
     });
 
     act(() => {
-      jest.advanceTimersByTime(650);
+      jest.advanceTimersByTime(1500);
     });
 
     expect(mockReplace).toHaveBeenCalledWith("/(app)/(tabs)/today");
@@ -331,7 +331,7 @@ describe("WeeklyReviewScreen", () => {
     });
 
     act(() => {
-      jest.advanceTimersByTime(650);
+      jest.advanceTimersByTime(1500);
     });
 
     expect(mockReplace).toHaveBeenCalledWith("/(app)/habits/habit-1");
