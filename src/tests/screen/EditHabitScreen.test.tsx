@@ -103,15 +103,22 @@ describe("EditHabitScreen", () => {
     expect(screen.getByText("Suggested adjustment")).toBeTruthy();
     expect(screen.getByText("Make the action smaller")).toBeTruthy();
     expect(screen.getByText("Why this suggestion")).toBeTruthy();
+    expect(screen.getByText("Suggested draft")).toBeTruthy();
     expect(
       screen.getByText(
         "Try choosing a tiny action that feels almost effortless for one week.",
       ),
     ).toBeTruthy();
     expect(
+      screen.getByText(
+        "Look at your Tiny action field and make it smaller. For example, change a big action into one small step you can do in under two minutes.",
+      ),
+    ).toBeTruthy();
+    expect(
       screen.getByText("You answered that the tiny action was too hard."),
     ).toBeTruthy();
     expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
+    expect(mockMutateAsync).not.toHaveBeenCalled();
   });
 
   it("shows trigger suggestion guidance for a valid suggestion type", () => {
@@ -125,14 +132,21 @@ describe("EditHabitScreen", () => {
     expect(screen.getByText("Suggested adjustment")).toBeTruthy();
     expect(screen.getByText("Choose a clearer trigger")).toBeTruthy();
     expect(screen.getByText("Why this suggestion")).toBeTruthy();
+    expect(screen.getByText("Suggested draft")).toBeTruthy();
     expect(
       screen.getByText(
         "Try attaching this habit to a specific moment that already happens every day.",
       ),
     ).toBeTruthy();
     expect(
+      screen.getByText(
+        'Look at your Stack trigger field and make it more specific. For example, use a clear moment like "After breakfast" or "After I brush my teeth."',
+      ),
+    ).toBeTruthy();
+    expect(
       screen.getByText("You answered that the trigger did not work."),
     ).toBeTruthy();
+    expect(screen.getByDisplayValue("After I brush my teeth")).toBeTruthy();
   });
 
   it("hides suggestion guidance for an invalid suggestion type", () => {
@@ -146,6 +160,7 @@ describe("EditHabitScreen", () => {
     expect(screen.queryByText("Suggested adjustment")).toBeNull();
     expect(screen.queryByText("Make the action smaller")).toBeNull();
     expect(screen.queryByText("Why this suggestion")).toBeNull();
+    expect(screen.queryByText("Suggested draft")).toBeNull();
     expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
   });
 
@@ -223,8 +238,14 @@ describe("EditHabitScreen", () => {
   });
 
   it("submits trimmed setup values and routes back to detail on success", async () => {
+    mockUseLocalSearchParams.mockReturnValue({
+      habitId: "habit-1",
+      suggestionType: "make_tiny_action_smaller",
+    });
+
     render(<EditHabitScreen />);
 
+    expect(screen.getByText("Suggested draft")).toBeTruthy();
     fireEvent.changeText(screen.getByDisplayValue("Reading"), "  Reading habit  ");
     fireEvent.changeText(
       screen.getByDisplayValue("Become a reader"),

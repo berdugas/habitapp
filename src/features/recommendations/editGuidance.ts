@@ -4,6 +4,8 @@ import type { HabitAdjustmentSuggestionType } from "@/features/recommendations/t
 
 export type HabitSuggestionEditGuidance = {
   body: string;
+  draftBody: string;
+  draftTitle: string;
   reason: string;
   title: string;
 };
@@ -14,22 +16,32 @@ const HABIT_SUGGESTION_EDIT_GUIDANCE_COPY: Record<
 > = {
   change_trigger: {
     body: "Try attaching this habit to a specific moment that already happens every day.",
+    draftBody: 'Look at your Stack trigger field and make it more specific. For example, use a clear moment like "After breakfast" or "After I brush my teeth."',
+    draftTitle: "Suggested draft",
     title: "Choose a clearer trigger",
   },
   keep_going: {
     body: "This habit seems workable. You may not need to change anything yet.",
+    draftBody: "No change may be needed right now. Keep the same trigger and tiny action for another week unless you personally want to adjust something.",
+    draftTitle: "Suggested draft",
     title: "Keep it stable",
   },
   make_tiny_action_smaller: {
     body: "Try choosing a tiny action that feels almost effortless for one week.",
+    draftBody: "Look at your Tiny action field and make it smaller. For example, change a big action into one small step you can do in under two minutes.",
+    draftTitle: "Suggested draft",
     title: "Make the action smaller",
   },
   plan_for_obstacle: {
     body: "Use what got in the way last week to make one small adjustment.",
+    draftBody: "Use the hard part from your review to choose one practical adjustment. For example, change the time, place, or setup so the same obstacle is less likely.",
+    draftTitle: "Suggested draft",
     title: "Plan around the hard part",
   },
   reduce_friction: {
     body: "Try changing the setup so starting this habit takes less effort.",
+    draftBody: "Look for one setup change that makes the habit easier to start. For example, prepare the item you need ahead of time or move it somewhere visible.",
+    draftTitle: "Suggested draft",
     title: "Reduce the friction",
   },
 };
