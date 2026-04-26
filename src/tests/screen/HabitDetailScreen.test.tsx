@@ -216,7 +216,7 @@ describe("HabitDetailScreen", () => {
     expect(screen.getByText("Why this suggestion")).toBeTruthy();
     expect(
       screen.getByText(
-        "Your recent consistency or skip pattern suggests this habit may need an easier setup.",
+        "An easier setup may help with your recent consistency or skip pattern.",
       ),
     ).toBeTruthy();
     expect(screen.getByText("Review suggestion")).toBeTruthy();

@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/feedback/EmptyState";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { LoadingState } from "@/components/feedback/LoadingState";
 import { useAuthSession } from "@/features/auth/hooks";
+import { formatHabitFormula } from "@/features/habits/formatters";
 import { useInactiveHabitsQuery } from "@/features/habits/hooks";
 import { signOut } from "@/features/auth/api";
 import { colors } from "@/theme/colors";
@@ -64,7 +65,10 @@ export default function SettingsScreen() {
             </Text>
             {inactiveHabitsQuery.data.map((habit) => (
               <HabitCard
-                formula={`After ${habit.stack_trigger}, I will ${habit.tiny_action}.`}
+                formula={formatHabitFormula(
+                  habit.stack_trigger,
+                  habit.tiny_action,
+                )}
                 key={habit.id}
                 metaText="Inactive habit"
                 name={habit.name}

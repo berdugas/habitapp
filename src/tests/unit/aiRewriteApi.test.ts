@@ -62,7 +62,16 @@ describe("ai rewrite api", () => {
     expect(() =>
       validateGenerateHabitRewriteResponse({
         ...validResponse,
-        suggestedTinyAction: "a".repeat(161),
+        suggestedTinyAction: "a".repeat(121),
+      }),
+    ).toThrow(GENERATE_HABIT_REWRITE_ERROR_MESSAGE);
+  });
+
+  it("rejects overlong explanations", () => {
+    expect(() =>
+      validateGenerateHabitRewriteResponse({
+        ...validResponse,
+        explanation: "a".repeat(361),
       }),
     ).toThrow(GENERATE_HABIT_REWRITE_ERROR_MESSAGE);
   });

@@ -12,6 +12,10 @@ import {
   useOwnedHabitQuery,
   useUpdateHabitMutation,
 } from "@/features/habits/hooks";
+import {
+  formatHabitFormula,
+  stripLeadingAfter,
+} from "@/features/habits/formatters";
 import { normalizeHabitReminderTime } from "@/features/habits/time";
 import {
   normalizeHabitSetupPayload,
@@ -60,6 +64,9 @@ export default function EditHabitScreen() {
     null,
   );
   const hasGeneratedRewrite = Boolean(rewriteDraft);
+  const hasRewriteFieldChanges = Boolean(
+    rewriteDraft?.suggestedStackTrigger || rewriteDraft?.suggestedTinyAction,
+  );
   const rewriteButtonLabel = generateRewriteMutation.isPending
     ? "Generating rewrite..."
     : rewriteError
@@ -161,7 +168,7 @@ export default function EditHabitScreen() {
     let copiedAnyField = false;
 
     if (rewriteDraft.suggestedStackTrigger) {
-      setStackTrigger(rewriteDraft.suggestedStackTrigger);
+      setStackTrigger(stripLeadingAfter(rewriteDraft.suggestedStackTrigger));
       copiedAnyField = true;
     }
 
@@ -177,10 +184,10 @@ export default function EditHabitScreen() {
     );
   }
 
-  const preview =
-    normalizedPayload.stackTrigger && normalizedPayload.tinyAction
-      ? `After ${normalizedPayload.stackTrigger}, I will ${normalizedPayload.tinyAction}.`
-      : "After I [stack trigger], I will [tiny action].";
+  const preview = formatHabitFormula(
+    normalizedPayload.stackTrigger,
+    normalizedPayload.tinyAction,
+  );
 
   if (ownedHabitQuery.isLoading) {
     return <LoadingState message="Loading habit details..." />;
@@ -213,28 +220,28 @@ export default function EditHabitScreen() {
 
       {suggestionGuidance ? (
         <View style={styles.suggestionCard}>
-          <Text selectable style={styles.suggestionEyebrow}>
+          <Text style={styles.suggestionEyebrow}>
             Suggested adjustment
           </Text>
-          <Text selectable style={styles.suggestionTitle}>
+          <Text style={styles.suggestionTitle}>
             {suggestionGuidance.title}
           </Text>
-          <Text selectable style={styles.suggestionBody}>
+          <Text style={styles.suggestionBody}>
             {suggestionGuidance.body}
           </Text>
-          <Text selectable style={styles.suggestionDraftLabel}>
+          <Text style={styles.suggestionDraftLabel}>
             {suggestionGuidance.draftTitle}
           </Text>
-          <Text selectable style={styles.suggestionDraftBody}>
+          <Text style={styles.suggestionDraftBody}>
             {suggestionGuidance.draftBody}
           </Text>
-          <Text selectable style={styles.suggestionReasonLabel}>
+          <Text style={styles.suggestionReasonLabel}>
             Why this suggestion
           </Text>
-          <Text selectable style={styles.suggestionReason}>
+          <Text style={styles.suggestionReason}>
             {suggestionGuidance.reason}
           </Text>
-          <Text selectable style={styles.aiRewriteHelper}>
+          <Text style={styles.aiRewriteHelper}>
             AI can suggest a rewrite, but you stay in control. It will not change
             your habit unless you edit and save it.
           </Text>
@@ -273,11 +280,17 @@ export default function EditHabitScreen() {
                 Use this as inspiration. To use it, manually update the fields
                 below and save.
               </Text>
-              <SecondaryButton
-                disabled={generateRewriteMutation.isPending}
-                label="Copy into fields"
-                onPress={handleCopyRewriteIntoFields}
-              />
+              {hasRewriteFieldChanges ? (
+                <SecondaryButton
+                  disabled={generateRewriteMutation.isPending}
+                  label="Copy into fields"
+                  onPress={handleCopyRewriteIntoFields}
+                />
+              ) : (
+                <Text selectable style={styles.aiRewriteCopyMessage}>
+                  No field changes to copy.
+                </Text>
+              )}
               {rewriteCopyMessage ? (
                 <Text selectable style={styles.aiRewriteCopyMessage}>
                   {rewriteCopyMessage}
@@ -459,16 +472,19 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 13,
     fontWeight: "700",
+    lineHeight: 20,
   },
   suggestionReason: {
     color: colors.textMuted,
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 24,
+    marginBottom: spacing.xs,
   },
   suggestionReasonLabel: {
     color: colors.text,
     fontSize: 13,
     fontWeight: "700",
+    lineHeight: 22,
   },
   suggestionTitle: {
     color: colors.text,

@@ -93,6 +93,8 @@ describe("SettingsScreen", () => {
     render(<SettingsScreen />);
 
     expect(screen.getByText("Open any inactive habit to reactivate it from Habit Detail.")).toBeTruthy();
+    expect(screen.getByText("After breakfast, I will Read 1 page.")).toBeTruthy();
+    expect(screen.queryByText("After After breakfast, I will Read 1 page.")).toBeNull();
 
     fireEvent.press(screen.getByLabelText("Reading details"));
 

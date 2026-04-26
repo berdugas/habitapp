@@ -17,6 +17,7 @@ import {
   useCreateHabitMutation,
   useInactiveHabitsQuery,
 } from "@/features/habits/hooks";
+import { formatHabitFormula } from "@/features/habits/formatters";
 import { logger } from "@/services/logger";
 import {
   normalizeHabitSetupPayload,
@@ -114,10 +115,7 @@ export default function CreateHabitScreen() {
     }
   }
 
-  const preview =
-    stackTrigger.trim() && tinyAction.trim()
-      ? `After ${stackTrigger.trim()}, I will ${tinyAction.trim()}.`
-      : "After I [stack trigger], I will [tiny action].";
+  const preview = formatHabitFormula(stackTrigger, tinyAction);
 
   return (
     <ScrollView
@@ -146,7 +144,10 @@ export default function CreateHabitScreen() {
           />
           {inactiveHabitsQuery.data.map((habit) => (
             <HabitCard
-              formula={`After ${habit.stack_trigger}, I will ${habit.tiny_action}.`}
+              formula={formatHabitFormula(
+                habit.stack_trigger,
+                habit.tiny_action,
+              )}
               key={habit.id}
               metaText="Inactive habit"
               name={habit.name}

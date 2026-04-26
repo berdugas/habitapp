@@ -13,6 +13,7 @@ import {
 } from "@/features/habits/api";
 import { getLatestWeeklyReview } from "@/features/reviews/api";
 import { getLatestWeeklyReviewQueryKey } from "@/features/reviews/queryKeys";
+import { formatHabitFormula } from "@/features/habits/formatters";
 import { summarizeHabitProgress } from "@/features/today/progress";
 import { trackEvent } from "@/services/analytics";
 import { logger } from "@/services/logger";
@@ -171,7 +172,7 @@ export function useHabitDetail(
       (latestReviewQuery.error as Error | null) ??
       null,
     formula: habit
-      ? `After ${habit.stack_trigger}, I will ${habit.tiny_action}.`
+      ? formatHabitFormula(habit.stack_trigger, habit.tiny_action)
       : "",
     habit,
     isLoading:

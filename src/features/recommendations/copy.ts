@@ -33,7 +33,7 @@ export const HABIT_ADJUSTMENT_SUGGESTIONS: Record<
   },
   reduce_friction: {
     body: "This habit may need an easier setup. Try preparing the environment ahead of time so starting takes less effort.",
-    reason: "Your recent consistency or skip pattern suggests this habit may need an easier setup.",
+    reason: "An easier setup may help with your recent consistency or skip pattern.",
     title: "Reduce the friction",
     type: "reduce_friction",
   },

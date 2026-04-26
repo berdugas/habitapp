@@ -237,6 +237,43 @@ describe("CreateHabitScreen", () => {
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
+  it("does not duplicate After in the preview when the user types it", () => {
+    render(<CreateHabitScreen />);
+
+    fireEvent.changeText(
+      screen.getByPlaceholderText("After I brush my teeth"),
+      "After breakfast",
+    );
+    fireEvent.changeText(
+      screen.getByPlaceholderText("Read 1 page"),
+      "Read one page",
+    );
+
+    expect(
+      screen.getByText("After breakfast, I will Read one page."),
+    ).toBeTruthy();
+    expect(
+      screen.queryByText("After After breakfast, I will Read one page."),
+    ).toBeNull();
+  });
+
+  it("shows the normal preview when the user types a plain trigger", () => {
+    render(<CreateHabitScreen />);
+
+    fireEvent.changeText(
+      screen.getByPlaceholderText("After I brush my teeth"),
+      "breakfast",
+    );
+    fireEvent.changeText(
+      screen.getByPlaceholderText("Read 1 page"),
+      "Read one page",
+    );
+
+    expect(
+      screen.getByText("After breakfast, I will Read one page."),
+    ).toBeTruthy();
+  });
+
   it("shows the pending label while the create mutation is in flight", () => {
     useCreateHabitMutation.mockReturnValue({
       isPending: true,
@@ -263,6 +300,8 @@ describe("CreateHabitScreen", () => {
     render(<CreateHabitScreen />);
 
     expect(screen.getByText("You already have inactive habits")).toBeTruthy();
+    expect(screen.getByText("After breakfast, I will Read 1 page.")).toBeTruthy();
+    expect(screen.queryByText("After After breakfast, I will Read 1 page.")).toBeNull();
     expect(screen.getByText("Open Settings")).toBeTruthy();
 
     fireEvent.press(screen.getByLabelText("Reading details"));

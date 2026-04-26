@@ -230,5 +230,6 @@ describe("habit detail hooks", () => {
     const result = useHabitDetail("habit-3");
 
     expect(result.isUpcoming).toBe(true);
+    expect(result.formula).toBe("After lunch, I will Stretch for 1 minute.");
   });
 });

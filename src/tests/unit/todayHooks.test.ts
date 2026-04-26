@@ -315,7 +315,7 @@ describe("today hooks", () => {
           id: "habit-2",
           name: "Meditation",
           start_date: "2026-04-25",
-          stack_trigger: "I wake up",
+          stack_trigger: "After I wake up",
           tiny_action: "Meditate for 1 minute",
         },
       ],

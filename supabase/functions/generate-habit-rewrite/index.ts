@@ -56,8 +56,8 @@ const RESPONSE_KEYS = [
   "suggestedTinyAction",
   "explanation",
 ] as const;
-const TRIGGER_MAX_LENGTH = 160;
-const TINY_ACTION_MAX_LENGTH = 160;
+const TRIGGER_MAX_LENGTH = 120;
+const TINY_ACTION_MAX_LENGTH = 120;
 const EXPLANATION_MAX_LENGTH = 360;
 const PROGRESS_WINDOW_DAYS = 30;
 const KIMI_TIMEOUT_MS = 12000;
@@ -316,15 +316,27 @@ function buildPrompt({
     "}",
     "",
     "Example valid output:",
-    '{ "suggestedStackTrigger": "After breakfast", "suggestedTinyAction": "Read one paragraph", "explanation": "This keeps the habit small and tied to a clear daily moment." }',
+    '{ "suggestedStackTrigger": "breakfast", "suggestedTinyAction": "Read one paragraph", "explanation": "This keeps the habit small and tied to a clear daily moment." }',
     "",
     "Rules:",
     "- Use exactly the three keys shown above.",
     "- Do not include any extra keys.",
+    "- Do not use markdown.",
+    "- Do not include extra commentary.",
     "- Do not create a new habit.",
     "- Do not make the habit bigger.",
+    '- suggestedStackTrigger should be a short cue, not a full sentence.',
+    '- suggestedStackTrigger must not start with "After".',
+    "- suggestedStackTrigger should be 2 to 8 words when possible.",
+    "- suggestedTinyAction should start with a verb.",
     "- Keep the tiny action small and realistic.",
     "- Prefer actions that can be started in under two minutes.",
+    "- suggestedTinyAction should be 2 to 10 words when possible.",
+    "- If triggerWorked is false, provide suggestedStackTrigger.",
+    "- If tinyActionTooHard is true, provide suggestedTinyAction.",
+    "- If triggerWorked is false and tinyActionTooHard is true, provide both fields.",
+    "- explanation must be one sentence.",
+    "- explanation must be 12 to 45 words.",
     "- Do not mention AI.",
     "- Do not give medical, financial, legal, or mental health advice.",
     "- If no change is needed, return null for both suggested fields and explain why.",
@@ -370,7 +382,7 @@ async function callKimi(prompt: string) {
       `${baseUrl.replace(/\/$/, "")}/chat/completions`,
       {
         body: JSON.stringify({
-          max_tokens: 220,
+          max_tokens: 320,
           messages: [
             {
               content:

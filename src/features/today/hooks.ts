@@ -14,6 +14,7 @@ import {
   useEligibleHabitsQuery,
   useUpcomingActiveHabitsQuery,
 } from "@/features/habits/hooks";
+import { formatHabitFormula } from "@/features/habits/formatters";
 import { getLatestWeeklyReview } from "@/features/reviews/api";
 import { isWeeklyReviewDue } from "@/features/reviews/due";
 import { getLatestWeeklyReviewQueryKey } from "@/features/reviews/queryKeys";
@@ -94,7 +95,7 @@ export function useTodayHabits() {
           logs: logsByHabitId.get(habit.id) ?? [],
           windowDays: TODAY_PROGRESS_WINDOW_DAYS,
         }),
-        formula: `After ${habit.stack_trigger}, I will ${habit.tiny_action}.`,
+        formula: formatHabitFormula(habit.stack_trigger, habit.tiny_action),
         id: habit.id,
         isWeeklyReviewDue: isWeeklyReviewDue({
           currentWeekStart,
@@ -113,7 +114,7 @@ export function useTodayHabits() {
       latestReviewQueries.some((query) => query.isLoading),
     upcomingHabits: (upcomingHabitsQuery.data ?? []).map<UpcomingHabitCardData>(
       (habit) => ({
-        formula: `After ${habit.stack_trigger}, I will ${habit.tiny_action}.`,
+        formula: formatHabitFormula(habit.stack_trigger, habit.tiny_action),
         id: habit.id,
         name: habit.name,
         startDate: habit.start_date,

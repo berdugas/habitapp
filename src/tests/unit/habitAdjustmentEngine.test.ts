@@ -99,7 +99,7 @@ describe("getHabitAdjustmentSuggestion", () => {
     expect(suggestion.type).toBe("reduce_friction");
     expect(suggestion.title).toBe("Reduce the friction");
     expect(suggestion.reason).toBe(
-      "Your recent consistency or skip pattern suggests this habit may need an easier setup.",
+      "An easier setup may help with your recent consistency or skip pattern.",
     );
   });
 
@@ -114,7 +114,7 @@ describe("getHabitAdjustmentSuggestion", () => {
 
     expect(suggestion.type).toBe("reduce_friction");
     expect(suggestion.reason).toBe(
-      "Your recent consistency or skip pattern suggests this habit may need an easier setup.",
+      "An easier setup may help with your recent consistency or skip pattern.",
     );
   });
 

@@ -25,8 +25,8 @@ const RESPONSE_KEYS = [
   "suggestedTinyAction",
   "explanation",
 ] as const;
-const TRIGGER_MAX_LENGTH = 160;
-const TINY_ACTION_MAX_LENGTH = 160;
+const TRIGGER_MAX_LENGTH = 120;
+const TINY_ACTION_MAX_LENGTH = 120;
 const EXPLANATION_MAX_LENGTH = 360;
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -1,23 +1,17 @@
-Recommended engineering order between these two modules
 
-Build in this exact order:
+1.  when there are no changes suggested from ai rewrite the copy on to fields is still available.  
+maybe we should remove that.
 
-2.7.1 Finalize data contract
-2.7.2 Database schema
-2.7.3 Domain models/types
-2.7.4 Habit data access
-2.7.5 Check-in data access
-2.7.6 Query/state hooks
-2.1.1 Creation UX fields
-2.1.2 Create screen layout
-2.1.3 Form state
-2.1.4 Validation
-2.7.7 Mutation flows
-2.1.5 Wire create mutation
-2.1.6 Post-save navigation
-2.7.8 Loading/error states
-2.1.7 Error handling
-2.1.8 Entry points
-2.7.9 Date utility
-2.7.10 Smoke tests
-2.1.9 First creation smoke tests
+2.  when there both the trigger and the tiny action needs to be updated because o the weekly review,  only one is shown initially.
+maybe we can show both suggestions at the same time.
+
+3. There seems to be a pre typed word After as part of habit creation.  
+Sometimes the user will type after also, maybe dedup the word "After".
+
+4. Preferred time maybe better as a drop down instead of a pre text type.
+
+5. Sometimes the HY in the AI rewrite is truncated.  We need to show this in full
+or have a limit for the number of words for the AI to generate the response.
+
+6. The AI rerite function needs to be studied, needs some guidelines into the prompt.
+
