@@ -15,6 +15,8 @@ const aiRewriteHelperCopy =
   "AI can suggest a rewrite, but you stay in control. It will not change your habit unless you edit and save it.";
 const aiRewriteInspirationCopy =
   "Use this as inspiration. To use it, manually update the fields below and save.";
+const rewriteCopiedCopy = "Rewrite copied into the form. Review it before saving.";
+const noFieldChangesCopy = "No field changes were suggested.";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -191,6 +193,7 @@ describe("EditHabitScreen", () => {
     expect(screen.queryByText(aiRewriteHelperCopy)).toBeNull();
     expect(screen.queryByText("Generate rewrite")).toBeNull();
     expect(screen.queryByText("AI rewrite idea")).toBeNull();
+    expect(screen.queryByText("Copy into fields")).toBeNull();
     expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
   });
 
@@ -254,6 +257,7 @@ describe("EditHabitScreen", () => {
       ),
     ).toBeTruthy();
     expect(screen.getByText(aiRewriteInspirationCopy)).toBeTruthy();
+    expect(screen.getByText("Copy into fields")).toBeTruthy();
     expect(screen.getByDisplayValue("After I brush my teeth")).toBeTruthy();
     expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
   });
@@ -390,6 +394,180 @@ describe("EditHabitScreen", () => {
     expect(screen.queryByText("The first idea uses a morning cue.")).toBeNull();
     expect(screen.getByDisplayValue("After I brush my teeth")).toBeTruthy();
     expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
+  });
+
+  it("copies suggested trigger and tiny action into the form without saving", async () => {
+    mockUseLocalSearchParams.mockReturnValue({
+      habitId: "habit-1",
+      suggestionType: "change_trigger",
+    });
+
+    render(<EditHabitScreen />);
+
+    fireEvent.press(screen.getByText("Generate rewrite"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Copy into fields")).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText("Copy into fields"));
+
+    expect(screen.getByDisplayValue("After breakfast")).toBeTruthy();
+    expect(screen.getByDisplayValue("Read one paragraph")).toBeTruthy();
+    expect(screen.getByText(rewriteCopiedCopy)).toBeTruthy();
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("submits copied rewrite values only after Save changes is pressed", async () => {
+    mockUseLocalSearchParams.mockReturnValue({
+      habitId: "habit-1",
+      suggestionType: "change_trigger",
+    });
+
+    render(<EditHabitScreen />);
+
+    fireEvent.press(screen.getByText("Generate rewrite"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Copy into fields")).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText("Copy into fields"));
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+
+    fireEvent.press(screen.getByText("Save changes"));
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        habitId: "habit-1",
+        payload: {
+          identityStatement: "Become a reader",
+          name: "Reading",
+          preferredTimeWindow: "Evening",
+          reminderEnabled: true,
+          reminderTime: "20:00",
+          stackTrigger: "After breakfast",
+          tinyAction: "Read one paragraph",
+        },
+      });
+    });
+  });
+
+  it("keeps the existing stack trigger when the rewrite has a null trigger", async () => {
+    mockUseLocalSearchParams.mockReturnValue({
+      habitId: "habit-1",
+      suggestionType: "make_tiny_action_smaller",
+    });
+    mockGenerateRewriteMutateAsync.mockResolvedValueOnce({
+      explanation: "Only the tiny action needs to be smaller.",
+      suggestedStackTrigger: null,
+      suggestedTinyAction: "Read one sentence",
+    });
+
+    render(<EditHabitScreen />);
+
+    fireEvent.press(screen.getByText("Generate rewrite"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Copy into fields")).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText("Copy into fields"));
+
+    expect(screen.getByDisplayValue("After I brush my teeth")).toBeTruthy();
+    expect(screen.getByDisplayValue("Read one sentence")).toBeTruthy();
+    expect(screen.getByText(rewriteCopiedCopy)).toBeTruthy();
+  });
+
+  it("keeps the existing tiny action when the rewrite has a null tiny action", async () => {
+    mockUseLocalSearchParams.mockReturnValue({
+      habitId: "habit-1",
+      suggestionType: "change_trigger",
+    });
+    mockGenerateRewriteMutateAsync.mockResolvedValueOnce({
+      explanation: "Only the trigger needs to be clearer.",
+      suggestedStackTrigger: "After breakfast",
+      suggestedTinyAction: null,
+    });
+
+    render(<EditHabitScreen />);
+
+    fireEvent.press(screen.getByText("Generate rewrite"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Copy into fields")).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText("Copy into fields"));
+
+    expect(screen.getByDisplayValue("After breakfast")).toBeTruthy();
+    expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
+    expect(screen.getByText(rewriteCopiedCopy)).toBeTruthy();
+  });
+
+  it("shows no-change copy when the rewrite has no suggested field changes", async () => {
+    mockUseLocalSearchParams.mockReturnValue({
+      habitId: "habit-1",
+      suggestionType: "keep_going",
+    });
+    mockGenerateRewriteMutateAsync.mockResolvedValueOnce({
+      explanation: "This setup is workable for another week.",
+      suggestedStackTrigger: null,
+      suggestedTinyAction: null,
+    });
+
+    render(<EditHabitScreen />);
+
+    fireEvent.press(screen.getByText("Generate rewrite"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Copy into fields")).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText("Copy into fields"));
+
+    expect(screen.getByDisplayValue("After I brush my teeth")).toBeTruthy();
+    expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
+    expect(screen.getByText(noFieldChangesCopy)).toBeTruthy();
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("clears the copy message when starting another generation", async () => {
+    mockUseLocalSearchParams.mockReturnValue({
+      habitId: "habit-1",
+      suggestionType: "change_trigger",
+    });
+    mockGenerateRewriteMutateAsync
+      .mockResolvedValueOnce({
+        explanation: "The first idea uses a morning cue.",
+        suggestedStackTrigger: "After breakfast",
+        suggestedTinyAction: "Read one paragraph",
+      })
+      .mockResolvedValueOnce({
+        explanation: "The second idea uses an evening cue.",
+        suggestedStackTrigger: "After dinner",
+        suggestedTinyAction: "Read one sentence",
+      });
+
+    render(<EditHabitScreen />);
+
+    fireEvent.press(screen.getByText("Generate rewrite"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Copy into fields")).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText("Copy into fields"));
+    expect(screen.getByText(rewriteCopiedCopy)).toBeTruthy();
+
+    fireEvent.press(screen.getByText("Generate another rewrite"));
+
+    await waitFor(() => {
+      expect(screen.queryByText(rewriteCopiedCopy)).toBeNull();
+    });
+    await waitFor(() => {
+      expect(screen.getByText("After dinner")).toBeTruthy();
+    });
   });
 
   it("normalizes database reminder times with seconds before showing the form", () => {

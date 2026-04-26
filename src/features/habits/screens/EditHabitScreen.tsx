@@ -56,6 +56,9 @@ export default function EditHabitScreen() {
   const [rewriteDraft, setRewriteDraft] =
     useState<GenerateHabitRewriteResponse | null>(null);
   const [rewriteError, setRewriteError] = useState<string | null>(null);
+  const [rewriteCopyMessage, setRewriteCopyMessage] = useState<string | null>(
+    null,
+  );
   const hasGeneratedRewrite = Boolean(rewriteDraft);
   const rewriteButtonLabel = generateRewriteMutation.isPending
     ? "Generating rewrite..."
@@ -137,6 +140,7 @@ export default function EditHabitScreen() {
 
     setRewriteDraft(null);
     setRewriteError(null);
+    setRewriteCopyMessage(null);
 
     try {
       const response = await generateRewriteMutation.mutateAsync({
@@ -147,6 +151,30 @@ export default function EditHabitScreen() {
     } catch {
       setRewriteError(getGenerateHabitRewriteErrorMessage());
     }
+  }
+
+  function handleCopyRewriteIntoFields() {
+    if (!rewriteDraft) {
+      return;
+    }
+
+    let copiedAnyField = false;
+
+    if (rewriteDraft.suggestedStackTrigger) {
+      setStackTrigger(rewriteDraft.suggestedStackTrigger);
+      copiedAnyField = true;
+    }
+
+    if (rewriteDraft.suggestedTinyAction) {
+      setTinyAction(rewriteDraft.suggestedTinyAction);
+      copiedAnyField = true;
+    }
+
+    setRewriteCopyMessage(
+      copiedAnyField
+        ? "Rewrite copied into the form. Review it before saving."
+        : "No field changes were suggested.",
+    );
   }
 
   const preview =
@@ -245,6 +273,16 @@ export default function EditHabitScreen() {
                 Use this as inspiration. To use it, manually update the fields
                 below and save.
               </Text>
+              <SecondaryButton
+                disabled={generateRewriteMutation.isPending}
+                label="Copy into fields"
+                onPress={handleCopyRewriteIntoFields}
+              />
+              {rewriteCopyMessage ? (
+                <Text selectable style={styles.aiRewriteCopyMessage}>
+                  {rewriteCopyMessage}
+                </Text>
+              ) : null}
             </View>
           ) : null}
         </View>
@@ -330,6 +368,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     gap: spacing.sm,
     padding: spacing.lg,
+  },
+  aiRewriteCopyMessage: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 19,
   },
   aiRewriteHelper: {
     color: colors.textMuted,
