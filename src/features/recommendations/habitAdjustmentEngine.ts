@@ -16,6 +16,13 @@ export function getHabitAdjustmentSuggestion({
   latestReview,
   progress,
 }: HabitAdjustmentInput): HabitAdjustmentSuggestion {
+  if (
+    latestReview.trigger_worked === false &&
+    latestReview.tiny_action_too_hard === true
+  ) {
+    return getSuggestion("fix_trigger_and_tiny_action");
+  }
+
   if (latestReview.tiny_action_too_hard === true) {
     return getSuggestion("make_tiny_action_smaller");
   }

@@ -115,6 +115,25 @@ describe("ai rewrite api", () => {
     });
   });
 
+  it("allows the combined trigger and tiny action suggestion type", async () => {
+    mockInvoke.mockResolvedValue({
+      data: validResponse,
+      error: null,
+    });
+
+    await generateHabitRewrite({
+      habitId: "habit-1",
+      suggestionType: "fix_trigger_and_tiny_action",
+    });
+
+    expect(mockInvoke).toHaveBeenCalledWith("generate-habit-rewrite", {
+      body: {
+        habitId: "habit-1",
+        suggestionType: "fix_trigger_and_tiny_action",
+      },
+    });
+  });
+
   it("maps Supabase function errors to friendly thrown errors", async () => {
     mockInvoke.mockResolvedValue({
       data: null,

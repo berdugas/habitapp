@@ -219,7 +219,7 @@ describe("CreateHabitScreen", () => {
       screen.getByPlaceholderText("Read 1 page"),
       "Read 1 page",
     );
-    fireEvent.changeText(screen.getByPlaceholderText("Evening"), "Evening");
+    fireEvent.press(screen.getByLabelText("Evening preferred time window"));
 
     fireEvent.press(screen.getByText("Save Habit"));
 
@@ -233,8 +233,35 @@ describe("CreateHabitScreen", () => {
     expect(screen.getByDisplayValue("Become a reader")).toBeTruthy();
     expect(screen.getByDisplayValue("After breakfast")).toBeTruthy();
     expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
-    expect(screen.getByDisplayValue("Evening")).toBeTruthy();
+    expect(
+      screen.getByLabelText("Evening preferred time window selected"),
+    ).toBeTruthy();
     expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it("stores the selected preferred time window from the pill selector", async () => {
+    render(<CreateHabitScreen />);
+
+    fireEvent.changeText(screen.getByPlaceholderText("Reading"), "Reading");
+    fireEvent.changeText(
+      screen.getByPlaceholderText("After I brush my teeth"),
+      "breakfast",
+    );
+    fireEvent.changeText(
+      screen.getByPlaceholderText("Read 1 page"),
+      "Read 1 page",
+    );
+    fireEvent.press(screen.getByLabelText("Morning preferred time window"));
+
+    fireEvent.press(screen.getByText("Save Habit"));
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          preferredTimeWindow: "Morning",
+        }),
+      );
+    });
   });
 
   it("does not duplicate After in the preview when the user types it", () => {

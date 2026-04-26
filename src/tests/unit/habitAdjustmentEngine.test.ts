@@ -74,6 +74,24 @@ describe("getHabitAdjustmentSuggestion", () => {
     });
   });
 
+  it("suggests adjusting both fields when the trigger failed and the tiny action was too hard", () => {
+    const suggestion = getSuggestion({
+      review: {
+        ...baseReview,
+        tiny_action_too_hard: true,
+        trigger_worked: false,
+      },
+    });
+
+    expect(suggestion).toEqual({
+      body: "Your trigger did not work, and the tiny action felt too hard. Try making both parts easier for next week.",
+      reason:
+        "You answered that the trigger did not work and the tiny action was too hard.",
+      title: "Adjust trigger and action",
+      type: "fix_trigger_and_tiny_action",
+    });
+  });
+
   it("suggests changing the trigger when the trigger did not work", () => {
     const suggestion = getSuggestion({
       review: {
@@ -159,6 +177,6 @@ describe("getHabitAdjustmentSuggestion", () => {
       },
     });
 
-    expect(suggestion.type).toBe("make_tiny_action_smaller");
+    expect(suggestion.type).toBe("fix_trigger_and_tiny_action");
   });
 });

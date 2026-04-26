@@ -7,6 +7,7 @@ export const GENERATE_HABIT_REWRITE_ERROR_MESSAGE =
 export type GenerateHabitRewriteClientRequest = {
   habitId: string;
   suggestionType:
+    | "fix_trigger_and_tiny_action"
     | "make_tiny_action_smaller"
     | "change_trigger"
     | "reduce_friction"

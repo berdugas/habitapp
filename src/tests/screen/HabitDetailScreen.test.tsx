@@ -380,6 +380,67 @@ describe("HabitDetailScreen", () => {
     ).toBeTruthy();
   });
 
+  it("shows a combined suggestion when trigger and tiny action both need work", () => {
+    mockUseHabitDetail.mockReturnValue({
+      error: null,
+      formula: "After breakfast, I will Read 1 page.",
+      habit: {
+        id: "habit-1",
+        identity_statement: null,
+        is_active: true,
+        name: "Reading",
+        preferred_time_window: null,
+        reminder_enabled: false,
+        reminder_time: null,
+        stack_trigger: "breakfast",
+        start_date: "2026-04-24",
+        tiny_action: "Read 1 page",
+      },
+      isLoading: false,
+      isUpcoming: false,
+      latestReview: {
+        adjustment_note: null,
+        created_at: "2026-04-24T00:00:00.000Z",
+        habit_id: "habit-1",
+        id: "review-1",
+        tiny_action_too_hard: true,
+        trigger_worked: false,
+        updated_at: "2026-04-24T00:00:00.000Z",
+        user_id: "user-1",
+        was_hard: null,
+        week_start: "2026-04-20",
+        went_well: "Breakfast cue worked",
+      },
+      progress: {
+        consistencyRate: 1,
+        skipCount: 0,
+        streak: 2,
+        todayStatus: "done",
+      },
+      recentLogs: [],
+    });
+
+    render(<HabitDetailScreen />);
+
+    expect(screen.getByText("Suggested adjustment")).toBeTruthy();
+    expect(screen.getByText("Adjust trigger and action")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "You answered that the trigger did not work and the tiny action was too hard.",
+      ),
+    ).toBeTruthy();
+
+    fireEvent.press(screen.getByText("Review suggestion"));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/(app)/habits/[habitId]/edit",
+      params: {
+        habitId: "habit-1",
+        suggestionType: "fix_trigger_and_tiny_action",
+      },
+    });
+  });
+
   it("hides optional setup fields when they are absent", () => {
     mockUseHabitDetail.mockReturnValue({
       error: null,

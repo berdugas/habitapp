@@ -8,6 +8,7 @@ import { SecondaryButton } from "@/components/buttons/SecondaryButton";
 import { HabitCard } from "@/components/cards/HabitCard";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { ErrorState } from "@/components/feedback/ErrorState";
+import { ChoicePills } from "@/components/forms/ChoicePills";
 import { useAuthSession } from "@/features/auth/hooks";
 import { getEligibleHabits } from "@/features/habits/api";
 import { TextField } from "@/components/forms/TextField";
@@ -18,6 +19,7 @@ import {
   useInactiveHabitsQuery,
 } from "@/features/habits/hooks";
 import { formatHabitFormula } from "@/features/habits/formatters";
+import { PREFERRED_TIME_WINDOW_OPTIONS } from "@/features/habits/preferredTimeWindows";
 import { logger } from "@/services/logger";
 import {
   normalizeHabitSetupPayload,
@@ -190,10 +192,10 @@ export default function CreateHabitScreen() {
           placeholder="Read 1 page"
           value={tinyAction}
         />
-        <TextField
+        <ChoicePills
           label="Preferred time window"
-          onChangeText={setPreferredTimeWindow}
-          placeholder="Evening"
+          onChange={setPreferredTimeWindow}
+          options={PREFERRED_TIME_WINDOW_OPTIONS}
           value={preferredTimeWindow}
         />
         <ToggleRow

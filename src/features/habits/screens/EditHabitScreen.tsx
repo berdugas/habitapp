@@ -6,6 +6,7 @@ import { PrimaryButton } from "@/components/buttons/PrimaryButton";
 import { SecondaryButton } from "@/components/buttons/SecondaryButton";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { LoadingState } from "@/components/feedback/LoadingState";
+import { ChoicePills } from "@/components/forms/ChoicePills";
 import { TextField } from "@/components/forms/TextField";
 import { ToggleRow } from "@/components/forms/ToggleRow";
 import {
@@ -16,6 +17,7 @@ import {
   formatHabitFormula,
   stripLeadingAfter,
 } from "@/features/habits/formatters";
+import { PREFERRED_TIME_WINDOW_OPTIONS } from "@/features/habits/preferredTimeWindows";
 import { normalizeHabitReminderTime } from "@/features/habits/time";
 import {
   normalizeHabitSetupPayload,
@@ -23,7 +25,9 @@ import {
 } from "@/features/habits/validators";
 import { getHabitSuggestionEditGuidance } from "@/features/recommendations/editGuidance";
 import { useGenerateHabitRewriteMutation } from "@/features/recommendations/hooks";
-import { normalizeHabitAdjustmentSuggestionType } from "@/features/recommendations/types";
+import {
+  normalizeHabitAdjustmentSuggestionType,
+} from "@/features/recommendations/types";
 import { colors } from "@/theme/colors";
 import { radius } from "@/theme/radius";
 import { spacing } from "@/theme/spacing";
@@ -34,6 +38,15 @@ import {
 } from "@/utils/userFacingErrors";
 
 import type { GenerateHabitRewriteResponse } from "@/features/recommendations/aiRewriteApi";
+import type { HabitAdjustmentSuggestionType } from "@/features/recommendations/types";
+
+function getRewriteRequestSuggestionType(
+  suggestionType: HabitAdjustmentSuggestionType,
+) {
+  return suggestionType === "fix_trigger_and_tiny_action"
+    ? "make_tiny_action_smaller"
+    : suggestionType;
+}
 
 export default function EditHabitScreen() {
   const { habitId, suggestionType } = useLocalSearchParams<{
@@ -152,7 +165,7 @@ export default function EditHabitScreen() {
     try {
       const response = await generateRewriteMutation.mutateAsync({
         habitId: ownedHabitQuery.data.id,
-        suggestionType: normalizedSuggestionType,
+        suggestionType: getRewriteRequestSuggestionType(normalizedSuggestionType),
       });
       setRewriteDraft(response);
     } catch {
@@ -330,10 +343,10 @@ export default function EditHabitScreen() {
           placeholder="Read 1 page"
           value={tinyAction}
         />
-        <TextField
+        <ChoicePills
           label="Preferred time window"
-          onChangeText={setPreferredTimeWindow}
-          placeholder="Evening"
+          onChange={setPreferredTimeWindow}
+          options={PREFERRED_TIME_WINDOW_OPTIONS}
           value={preferredTimeWindow}
         />
         <ToggleRow

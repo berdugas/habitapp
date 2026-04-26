@@ -2,6 +2,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.104.0";
 
 type SuggestionType =
+  | "fix_trigger_and_tiny_action"
   | "make_tiny_action_smaller"
   | "change_trigger"
   | "reduce_friction"
@@ -45,6 +46,7 @@ type GenerateHabitRewriteResponse = {
 };
 
 const ALLOWED_SUGGESTION_TYPES = new Set<SuggestionType>([
+  "fix_trigger_and_tiny_action",
   "make_tiny_action_smaller",
   "change_trigger",
   "reduce_friction",
@@ -335,6 +337,7 @@ function buildPrompt({
     "- If triggerWorked is false, provide suggestedStackTrigger.",
     "- If tinyActionTooHard is true, provide suggestedTinyAction.",
     "- If triggerWorked is false and tinyActionTooHard is true, provide both fields.",
+    '- If suggestionType is "fix_trigger_and_tiny_action", provide both suggestedStackTrigger and suggestedTinyAction.',
     "- explanation must be one sentence.",
     "- explanation must be 12 to 45 words.",
     "- Do not mention AI.",

@@ -1,17 +1,18 @@
+fixes:
 
-1.  when there are no changes suggested from ai rewrite the copy on to fields is still available.  
-maybe we should remove that.
-
-2.  when there both the trigger and the tiny action needs to be updated because o the weekly review,  only one is shown initially.
+- when there both the trigger and the tiny action needs to be updated because of 
+the weekly review,  only one is shown initially.
 maybe we can show both suggestions at the same time.
 
-3. There seems to be a pre typed word After as part of habit creation.  
-Sometimes the user will type after also, maybe dedup the word "After".
+- Preferred time maybe better as a drop down instead of a pre text type.
 
-4. Preferred time maybe better as a drop down instead of a pre text type.
+- The AI rerite function needs to be studied, needs some guidelines into the prompt.
 
-5. Sometimes the HY in the AI rewrite is truncated.  We need to show this in full
-or have a limit for the number of words for the AI to generate the response.
+- in scenario of reduce friction, the text is suggesting to make changes, but hen you generate
+AI rewrite there will be no suggestions if Trigger worked and tiny action is also ok.  This is 
+a contradcition.  Need to re align the logic here based on the possible scenarios.
 
-6. The AI rerite function needs to be studied, needs some guidelines into the prompt.
+
+
+
 

@@ -114,7 +114,9 @@ describe("EditHabitScreen", () => {
     expect(screen.getByDisplayValue("Become a reader")).toBeTruthy();
     expect(screen.getByDisplayValue("After I brush my teeth")).toBeTruthy();
     expect(screen.getByDisplayValue("Read 1 page")).toBeTruthy();
-    expect(screen.getByDisplayValue("Evening")).toBeTruthy();
+    expect(
+      screen.getByLabelText("Evening preferred time window selected"),
+    ).toBeTruthy();
     expect(screen.getByDisplayValue("20:00")).toBeTruthy();
   });
 
@@ -177,6 +179,52 @@ describe("EditHabitScreen", () => {
       screen.getByText("You answered that the trigger did not work."),
     ).toBeTruthy();
     expect(screen.getByDisplayValue("After I brush my teeth")).toBeTruthy();
+  });
+
+  it("shows combined suggestion guidance when trigger and tiny action both need work", () => {
+    mockUseLocalSearchParams.mockReturnValue({
+      habitId: "habit-1",
+      suggestionType: "fix_trigger_and_tiny_action",
+    });
+
+    render(<EditHabitScreen />);
+
+    expect(screen.getByText("Suggested adjustment")).toBeTruthy();
+    expect(screen.getByText("Adjust trigger and action")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Try making the cue clearer and the action smaller for one week.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Look at both fields. Choose a specific daily moment for Stack trigger, then make the Tiny action small enough to start in under two minutes.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "You answered that the trigger did not work and the tiny action was too hard.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText("Generate rewrite")).toBeTruthy();
+  });
+
+  it("uses a compatible rewrite request type for the combined suggestion", async () => {
+    mockUseLocalSearchParams.mockReturnValue({
+      habitId: "habit-1",
+      suggestionType: "fix_trigger_and_tiny_action",
+    });
+
+    render(<EditHabitScreen />);
+
+    fireEvent.press(screen.getByText("Generate rewrite"));
+
+    await waitFor(() => {
+      expect(mockGenerateRewriteMutateAsync).toHaveBeenCalledWith({
+        habitId: "habit-1",
+        suggestionType: "make_tiny_action_smaller",
+      });
+    });
   });
 
   it("hides suggestion guidance for an invalid suggestion type", () => {
@@ -727,7 +775,7 @@ describe("EditHabitScreen", () => {
       "  After breakfast  ",
     );
     fireEvent.changeText(screen.getByDisplayValue("Read 1 page"), "  Read 2 pages  ");
-    fireEvent.changeText(screen.getByDisplayValue("Evening"), "  ");
+    fireEvent.press(screen.getByLabelText("No preference preferred time window"));
     fireEvent.changeText(screen.getByDisplayValue("20:00"), " 21:15 ");
 
     fireEvent.press(screen.getByText("Save changes"));
